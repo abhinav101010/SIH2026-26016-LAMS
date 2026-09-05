@@ -1,0 +1,373 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  PROPOSAL_OFFICER
+  REVIEWING_AUTHORITY
+  FIELD_OFFICER
+  VIEWER
+}
+
+enum ProposalStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  NOTIFICATION_ISSUED
+  AWARD_DECLARED
+  COMPENSATION
+  ACQUIRED
+  POSSESSION
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum CompensationStatus {
+  ASSESSED
+  PARTIALLY_PAID
+  PAID
+  PENDING
+}
+
+enum PossessionStatus {
+  PENDING
+  PARTIAL
+  COMPLETED
+}
+
+enum RehabilitationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          String    @default("VIEWER")
+  departmentId  String?
+  department    String?
+  phone         String?
+  employeeId    String?   @unique
+  joinedDate    DateTime? @default(now())
+  lastLogin     DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  departmentRef   Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+  createdProposals Proposal[] @relation("CreatedProposals")
+  updatedProposals Proposal[] @relation("UpdatedProposals")
+  approvals     Approval[]
+  documents     Document[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  families      AffectedFamily[]
+
+  @@map("users")
+}
+
+model Project {
+  id                 String    @id @default(uuid())
+  name               String
+  type               String
+  state              String
+  districts          String[]
+  department         String
+  startDate          DateTime?
+  expectedCompletion DateTime?
+  totalLength        Float?
+  status             String    @default("ongoing")
+  budget             Float?
+  center             Float[]
+  zoom               Float?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  proposals          Proposal[]
+
+  @@map("projects")
+}
+
+model Proposal {
+  id                String            @id @default(uuid())
+  proposalNumber    String            @unique
+  projectName       String
+  projectType       String
+  department        String
+  ministry          String?
+  state             String
+  district          String
+  purpose           String
+  estimatedCost     Float
+  totalLandRequired Float
+  numberOfParcels   Int
+  landType          String
+  affectedFamilies  Int
+  displacedFamilies Int?
+  status            ProposalStatus    @default(DRAFT)
+  priority          String?
+  description       String?
+  currentStage      String?
+  progress          Int               @default(0)
+  submittedBy       String?
+  submittedDate     DateTime?
+  targetCompletion  DateTime?
+  departmentId      String?
+  createdById       String?
+  updatedById       String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  createdBy         User?             @relation("CreatedProposals", fields: [createdById], references: [id])
+  updatedBy         User?             @relation("UpdatedProposals", fields: [updatedById], references: [id])
+  departmentRef     Department?       @relation("ProposalDepartment", fields: [departmentId], references: [id])
+  project           Project?          @relation(fields: [projectId], references: [id])
+  projectId         String?
+  parcels           LandParcel[]
+  approvals         Approval[]
+  documents         Document[]
+  compensations     Compensation[]
+  families          AffectedFamily[]
+  possessions       Possession[]
+
+  @@map("proposals")
+}
+
+model LandParcel {
+  id           String   @id @default(uuid())
+  proposalId   String
+  parcelNumber String
+  area         Float
+  landType     String?
+  status       String?
+  surveyNo     String?
+  village      String?
+  owner        String?
+  geometry     String?
+  acquiredDate DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  proposal     Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  possessions  Possession[]
+
+  @@map("land_parcels")
+}
+
+model Approval {
+  id         String         @id @default(uuid())
+  proposalId String
+  reviewerId String
+  action     ApprovalAction
+  remarks    String?
+  createdAt  DateTime       @default(now())
+
+  proposal  Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  reviewer  User     @relation(fields: [reviewerId], references: [id])
+
+  @@map("approvals")
+}
+
+model Document {
+  id                 String             @id @default(uuid())
+  proposalId         String
+  name               String
+  fileName           String
+  fileType           String
+  fileSize           Int
+  storagePath        String
+  version            String             @default("1.0")
+  uploadedById       String
+  verificationStatus DocumentStatus     @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+
+  @@map("documents")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  message     String
+  type        String
+  category    String?
+  priority    String?
+  action      String?
+  link        String?
+  unread      Boolean  @default(true)
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Compensation {
+  id              String              @id @default(uuid())
+  proposalId      String
+  affectedFamilyId String?
+  assessedAmount  Float?
+  paidAmount      Float?
+  status          CompensationStatus  @default(PENDING)
+  paymentDate     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  proposal     Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  family       AffectedFamily? @relation(fields: [affectedFamilyId], references: [id])
+
+  @@map("compensation")
+}
+
+model AffectedFamily {
+  id              String              @id @default(uuid())
+  proposalId      String
+  headOfFamily    String
+  address         String?
+  landArea        Float?
+  compensationAmount Float?
+  status          String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  proposal         Proposal         @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  createdBy        User             @relation(fields: [createdById], references: [id])
+  createdById      String
+  rehabilitation   RehabilitationRecord?
+  compensations    Compensation[]
+
+  @@map("affected_families")
+}
+
+model RehabilitationRecord {
+  id                String              @id @default(uuid())
+  affectedFamilyId  String              @unique
+  proposalId        String
+  status            RehabilitationStatus @default(PENDING)
+  entitlements      String?
+  completionStatus  String?
+  remarks           String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  affectedFamily AffectedFamily @relation(fields: [affectedFamilyId], references: [id], onDelete: Cascade)
+
+  @@map("rehabilitation_records")
+}
+
+model Possession {
+  id           String           @id @default(uuid())
+  proposalId   String
+  parcelId     String
+  status       PossessionStatus @default(PENDING)
+  possessionDate DateTime?
+  remarks      String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  proposal Proposal     @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  parcel   LandParcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@map("possession")
+}
+
+model Department {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  code        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]     @relation("UserDepartment")
+  proposals   Proposal[] @relation("ProposalDepartment")
+  auditLogs   AuditLog[]
+
+  @@map("departments")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  entityType  String
+  entityId    String
+  action      String
+  oldValue    String?
+  newValue    String?
+  metadata    String?
+  departmentId String?
+  createdAt   DateTime @default(now())
+
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  department  Department? @relation(fields: [departmentId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model AppRole {
+  id           String    @id @default(uuid())
+  name         String    @unique
+  description  String?
+  isSystemRole Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  category    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String    @id @default(uuid())
+  appRoleId    String?
+  role         String
+  permissionId String
+  createdAt    DateTime  @default(now())
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  appRole    AppRole?    @relation(fields: [appRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@map("role_permissions")
+}

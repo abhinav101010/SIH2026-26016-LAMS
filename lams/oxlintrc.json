@@ -1,0 +1,5 @@
+{
+  "rules": {
+    "react_refresh/only-export-components": "off"
+  }
+}

@@ -1,0 +1,337 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   NLAMS Design Tokens — National Land Acquisition & Management System
+   Light: Blue | White | Green
+   Dark:  Purple | Yellow | Black
+   ============================================================ */
+
+/* === Semantic Color Variables === */
+:root {
+  /* Primary — Blue */
+  --color-primary: 239 84% 67%;
+  --color-primary-hover: 217 91% 60%;
+  --color-primary-fg: 0 0% 100%;
+
+  /* Secondary — Green */
+  --color-secondary: 142 71% 45%;
+  --color-secondary-hover: 142 76% 36%;
+
+  /* Accent — Amber */
+  --color-accent: 38 92% 50%;
+  --color-accent-hover: 25 95% 53%;
+
+  /* Backgrounds */
+  --color-bg: 210 40% 98%;
+  --color-surface: 0 0% 100%;
+  --color-card: 0 0% 100%;
+
+  /* Text */
+  --color-text: 222 47% 11%;
+  --color-text-secondary: 215 16% 47%;
+  --color-text-tertiary: 215 16% 65%;
+
+  /* Borders */
+  --color-border: 214 32% 91%;
+  --color-border-strong: 214 32% 82%;
+
+  /* Status */
+  --color-status-pending: 38 92% 50%;
+  --color-status-approved: 142 71% 45%;
+  --color-status-rejected: 0 84% 60%;
+  --color-status-review: 217 91% 60%;
+  --color-status-possession: 160 84% 39%;
+  --color-status-notification: 263 70% 50%;
+
+  /* Shadows — light mode */
+  --shadow-clay: 8px 17px 42px 0 rgba(59, 130, 246, 0.04), 4px 8px 16px 0 rgba(59, 130, 246, 0.02);
+  --shadow-clay-sm: 4px 8px 20px 0 rgba(59, 130, 246, 0.035);
+  --shadow-clay-md: 12px 24px 48px 0 rgba(59, 130, 246, 0.055), 6px 12px 24px 0 rgba(59, 130, 246, 0.025);
+  --shadow-clay-lg: 20px 40px 80px 0 rgba(59, 130, 246, 0.07), 10px 20px 40px 0 rgba(59, 130, 246, 0.035);
+  --shadow-clay-xl: 28px 56px 112px 0 rgba(59, 130, 246, 0.09), 14px 28px 56px 0 rgba(59, 130, 246, 0.045);
+  --shadow-clay-hover: 14px 28px 56px 0 rgba(59, 130, 246, 0.07), 7px 14px 28px 0 rgba(59, 130, 246, 0.035);
+  --shadow-clay-inner: inset 8px 8px 16px 0 rgba(59, 130, 246, 0.04), inset -8px -8px 16px 0 rgba(255, 255, 255, 0.7);
+  --shadow-clay-btn: 4px 8px 20px 0 rgba(59, 130, 246, 0.08);
+  --shadow-clay-btn-hover: 8px 16px 32px 0 rgba(59, 130, 246, 0.12);
+}
+
+/* === Semantic Color Variables — Dark Theme === */
+[data-theme='dark'],
+.dark {
+  --color-primary: 271 91% 65%;
+  --color-primary-hover: 271 76% 76%;
+  --color-primary-fg: 0 0% 100%;
+
+  --color-secondary: 48 96% 53%;
+  --color-secondary-hover: 45 93% 47%;
+
+  --color-accent: 271 76% 76%;
+  --color-accent-hover: 272 71% 85%;
+
+  --color-bg: 0 0% 0%;
+  --color-surface: 240 10% 4%;
+  --color-card: 240 10% 6%;
+
+  --color-text: 0 0% 100%;
+  --color-text-secondary: 240 5% 66%;
+  --color-text-tertiary: 240 5% 46%;
+
+  --color-border: 240 4% 16%;
+  --color-border-strong: 240 4% 24%;
+
+  --color-status-pending: 38 92% 53%;
+  --color-status-approved: 142 71% 45%;
+  --color-status-rejected: 0 84% 60%;
+  --color-status-review: 217 91% 60%;
+  --color-status-possession: 160 84% 39%;
+  --color-status-notification: 263 70% 65%;
+
+  /* Shadows — dark mode */
+  --shadow-clay: 8px 17px 42px 0 rgba(168, 85, 247, 0.08), 4px 8px 16px 0 rgba(0, 0, 0, 0.3);
+  --shadow-clay-sm: 4px 8px 20px 0 rgba(168, 85, 247, 0.06);
+  --shadow-clay-md: 12px 24px 48px 0 rgba(168, 85, 247, 0.08), 6px 12px 24px 0 rgba(0, 0, 0, 0.25);
+  --shadow-clay-lg: 20px 40px 80px 0 rgba(168, 85, 247, 0.1), 10px 20px 40px 0 rgba(0, 0, 0, 0.35);
+  --shadow-clay-xl: 28px 56px 112px 0 rgba(168, 85, 247, 0.12), 14px 28px 56px 0 rgba(0, 0, 0, 0.4);
+  --shadow-clay-hover: 14px 28px 56px 0 rgba(168, 85, 247, 0.1), 7px 14px 28px 0 rgba(0, 0, 0, 0.35);
+  --shadow-clay-inner: inset 8px 8px 16px 0 rgba(0, 0, 0, 0.4), inset -8px -8px 16px 0 rgba(168, 85, 247, 0.03);
+  --shadow-clay-btn: 4px 8px 20px 0 rgba(168, 85, 247, 0.1);
+  --shadow-clay-btn-hover: 8px 16px 32px 0 rgba(168, 85, 247, 0.15);
+}
+
+/* === Base reset & typography === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+[data-theme='dark'],
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: hsl(var(--color-bg));
+  color: hsl(var(--color-text));
+  line-height: 1.6;
+  font-weight: 400;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1.25;
+  color: hsl(var(--color-text));
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.375rem; }
+h4 { font-size: 1.125rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; font-weight: 600; }
+
+p { margin: 0; }
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* === Claymorphic utility classes === */
+.clay-surface {
+  background: hsl(var(--color-surface));
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-clay);
+  border: 1px solid hsla(239 84% 67% / 0.08);
+}
+
+.clay-card {
+  background: hsl(var(--color-card));
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-clay);
+  border: 1px solid hsla(239 84% 67% / 0.06);
+}
+
+.clay-card-hover {
+  background: hsl(var(--color-card));
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-clay);
+  border: 1px solid hsla(239 84% 67% / 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-card-hover:hover {
+  box-shadow: var(--shadow-clay-hover);
+  transform: translateY(-2px);
+}
+
+.clay-inner {
+  box-shadow: var(--shadow-clay-inner);
+}
+
+.clay-btn {
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-clay-btn);
+  transition: all 0.2s ease;
+  border: 1px solid hsla(239 84% 67% / 0.1);
+}
+
+.clay-btn:hover {
+  box-shadow: var(--shadow-clay-btn-hover);
+  transform: translateY(-1px);
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsla(239 84% 67% / 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(239 84% 67% / 0.35);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: hsla(271 91% 65% / 0.2);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: hsla(271 91% 65% / 0.35);
+}
+
+/* === Selection === */
+::selection {
+  background: hsla(239 84% 67% / 0.25);
+  color: hsl(var(--color-text));
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--color-primary));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* === Map container fix === */
+.leaflet-container {
+  font: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+}
+
+.clay-popup .leaflet-popup-content-wrapper {
+  background: hsl(var(--color-card));
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.clay-popup .leaflet-popup-tip {
+  background: hsl(var(--color-card));
+}
+
+/* === Animations === */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.25s ease-out;
+}
+
+/* === Utility === */
+#root {
+  min-height: 100vh;
+  scroll-behavior: smooth;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 2s linear infinite;
+  }
+  .animate-spin-slower {
+    animation: spin 3s linear infinite;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsla(239 84% 67% / 0.25);
+    border-radius: 2px;
+  }
+}
