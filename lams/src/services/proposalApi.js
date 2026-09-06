@@ -27,4 +27,10 @@ export const proposalApi = {
 
   requestChanges: (id, remarks) =>
     api.post(`/proposals/${id}/request-changes`, { remarks }).then((r) => r.data),
+
+  completeVerification: (id) =>
+    api.post(`/proposals/${id}/complete-verification`).then((r) => r.data),
+
+  startFieldVerification: (id) =>
+    api.post(`/proposals/${id}/start-field-verification`).then((r) => r.data),
 }

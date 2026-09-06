@@ -76,8 +76,23 @@ const deleteAuditLog = async (req, res) => {
   }
 }
 
+const deleteAllAuditLogs = async (req, res) => {
+  try {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      return errorResponse(res, 'Access denied', 403)
+    }
+
+    await prisma.auditLog.deleteMany({})
+
+    return successResponse(res, { message: 'All audit logs deleted successfully' })
+  } catch (error) {
+    return errorResponse(res, 'Failed to delete audit logs', 500)
+  }
+}
+
 module.exports = {
   createAuditLog,
   getAuditLogs,
   deleteAuditLog,
+  deleteAllAuditLogs,
 }

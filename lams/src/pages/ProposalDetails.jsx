@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Trash2,
   Edit3,
+  ShieldCheck,
 } from 'lucide-react'
 
 import ClayCard from '../components/ui/ClayCard'
@@ -33,13 +34,13 @@ import ClayButton from '../components/ui/ClayButton'
 import Timeline from '../components/common/Timeline'
 import Modal from '../components/ui/Modal'
 
-import { proposalApi, parcelApi } from '../services'
+import { proposalApi, parcelApi, documentApi } from '../services'
 import { useAuth } from '../auth/AuthContext'
 import { formatDate, formatCurrency, formatArea } from '../utils/formatters'
 
 const TIMELINE_STAGES = [
   { id: 'submitted', label: 'Proposal Submitted', description: 'Initial proposal submitted with required documentation' },
-  { id: 'verification', label: 'Document Verification', description: 'Verification of submitted documents and ownership records' },
+  { id: 'field_verification', label: 'Field Verification', description: 'Verification of documents and field data by Field Officer' },
   { id: 'review', label: 'Administrative Review', description: 'Review by district administration and concerned departments' },
   { id: 'approved', label: 'Approved', description: 'Proposal approved by competent authority' },
   { id: 'notification', label: 'Notification', description: 'Public notification issued in Official Gazette' },
@@ -54,6 +55,8 @@ const ProposalDetails = () => {
   const [proposal, setProposal] = useState(null)
   const [parcels, setParcels] = useState([])
   const [documents, setDocuments] = useState([])
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [uploadFile, setUploadFile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [showActionModal, setShowActionModal] = useState(false)
@@ -62,6 +65,12 @@ const ProposalDetails = () => {
   const [toast, setToast] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [verifyingDocId, setVerifyingDocId] = useState(null)
+  const [rejectingDocId, setRejectingDocId] = useState(null)
+  const [docRemarks, setDocRemarks] = useState('')
+  const [docActionLoading, setDocActionLoading] = useState(false)
 
   const fetchProposal = async () => {
     setLoading(true)
@@ -137,6 +146,91 @@ const ProposalDetails = () => {
     }
   }
 
+  const handleVerifyDocument = async () => {
+    if (!verifyingDocId) return
+    setDocActionLoading(true)
+    try {
+      await documentApi.verify(verifyingDocId, docRemarks)
+      showToast('Document verified successfully')
+      setShowVerifyModal(false)
+      setVerifyingDocId(null)
+      setDocRemarks('')
+      await fetchProposal()
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to verify document', 'error')
+    } finally {
+      setDocActionLoading(false)
+    }
+  }
+
+  const handleRejectDocument = async () => {
+    if (!rejectingDocId || !docRemarks.trim()) {
+      showToast('Rejection reason is required', 'error')
+      return
+    }
+    setDocActionLoading(true)
+    try {
+      await documentApi.reject(rejectingDocId, docRemarks)
+      showToast('Document rejected')
+      setShowRejectModal(false)
+      setRejectingDocId(null)
+      setDocRemarks('')
+      await fetchProposal()
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to reject document', 'error')
+    } finally {
+      setDocActionLoading(false)
+    }
+  }
+
+  const handleUploadDocument = async () => {
+    if (!uploadFile) return
+    setUploadingDoc(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      formData.append('name', uploadFile.name)
+      formData.append('fileName', uploadFile.name)
+      formData.append('fileType', uploadFile.type.split('/')[1] || 'pdf')
+      formData.append('fileSize', String(uploadFile.size))
+      formData.append('storagePath', '')
+      await documentApi.upload(id, formData)
+      showToast('Document uploaded successfully')
+      setUploadFile(null)
+      await fetchProposal()
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to upload document', 'error')
+    } finally {
+      setUploadingDoc(false)
+    }
+  }
+
+  const handleCompleteVerification = async () => {
+    setActionLoading(true)
+    try {
+      await proposalApi.completeVerification(id)
+      showToast('Field verification completed')
+      await fetchProposal()
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to complete verification', 'error')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleStartFieldVerification = async () => {
+    setActionLoading(true)
+    try {
+      await proposalApi.startFieldVerification(id)
+      showToast('Field verification started')
+      await fetchProposal()
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to start field verification', 'error')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const openActionModal = (type) => {
     setActionType(type)
     setRemarks('')
@@ -169,7 +263,10 @@ const ProposalDetails = () => {
   }
 
   const currentPhase = proposal.currentStage || 'approved'
-  const currentStageId = TIMELINE_STAGES.find((s) => s.label === currentPhase)?.id || 'approved'
+  const currentStageId = (() => {
+    if (proposal.status === 'FIELD_VERIFICATION') return 'field_verification'
+    return TIMELINE_STAGES.find((s) => s.label === currentPhase)?.id || 'approved'
+  })()
   const progressPercent = proposal.progress || 0
   const acquiredArea = Math.round(proposal.totalLandRequired * (progressPercent / 100))
   const remainingArea = proposal.totalLandRequired - acquiredArea
@@ -189,6 +286,10 @@ const ProposalDetails = () => {
   const canRequestChanges = proposal.status === 'UNDER_REVIEW' && hasPermission('PROPOSALS_EDIT')
   const canEdit = proposal.status === 'DRAFT' && hasPermission('PROPOSALS_EDIT')
   const canDelete = (proposal.status === 'DRAFT' || user?.role === 'SUPER_ADMIN') && hasPermission('PROPOSALS_DELETE')
+  const isFieldOfficer = user?.role === 'FIELD_OFFICER'
+  const canVerifyDocuments = isFieldOfficer && hasPermission('DOCUMENTS_VERIFY')
+  const canCompleteVerification = isFieldOfficer && proposal.status === 'FIELD_VERIFICATION'
+  const canStartFieldVerification = isFieldOfficer && proposal.status === 'SUBMITTED'
 
   return (
     <motion.div
@@ -245,6 +346,16 @@ const ProposalDetails = () => {
           {canRequestChanges && (
             <ClayButton variant="outline" size="sm" icon={MessageSquare} onClick={() => openActionModal('request-changes')}>
               Request Changes
+            </ClayButton>
+          )}
+          {canCompleteVerification && (
+            <ClayButton variant="success" size="sm" icon={CheckCircle} onClick={handleCompleteVerification} loading={actionLoading}>
+              Complete Verification
+            </ClayButton>
+          )}
+          {canStartFieldVerification && (
+            <ClayButton variant="primary" size="sm" icon={CheckCircle} onClick={handleStartFieldVerification} loading={actionLoading}>
+              Start Field Verification
             </ClayButton>
           )}
           <ClayButton variant="outline" size="sm" icon={Download}>
@@ -374,28 +485,170 @@ const ProposalDetails = () => {
             <span className="text-sm text-foreground-secondary">{documents.length} document{documents.length !== 1 ? 's' : ''}</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map((doc) => (
-              <div key={doc.id} className="clay-card-hover p-4 flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <FileText size={20} className="text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{doc.name}</p>
-                  <p className="text-xs text-foreground-secondary mt-1">
-                    {doc.fileType?.toUpperCase()} · {(doc.fileSize / 1024 / 1024).toFixed(1)} MB
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${doc.verificationStatus === 'VERIFIED' ? 'bg-status-approved/10 text-status-approved' : 'bg-status-pending/10 text-status-pending'}`}>
-                      {doc.verificationStatus}
-                    </span>
+          {hasPermission('DOCUMENTS_UPLOAD') && (
+            <div className="mb-4 p-4 border-2 border-dashed border-border rounded-xl">
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  id="doc-upload"
+                  className="hidden"
+                  onChange={(e) => setUploadFile(e.target.files[0] || null)}
+                />
+                <label htmlFor="doc-upload" className="cursor-pointer flex-1">
+                  <p className="text-sm font-medium text-foreground">{uploadFile ? uploadFile.name : 'Choose a file to upload'}</p>
+                  <p className="text-xs text-foreground-secondary mt-1">PDF, DOC, DOCX, JPG, PNG — max 10MB</p>
+                </label>
+                <ClayButton
+                  variant="primary"
+                  size="sm"
+                  onClick={handleUploadDocument}
+                  loading={uploadingDoc}
+                  disabled={!uploadFile}
+                >
+                  Upload
+                </ClayButton>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {documents.map((doc) => {
+              const statusClass = doc.verificationStatus === 'VERIFIED'
+                ? 'bg-status-approved/10 text-status-approved'
+                : doc.verificationStatus === 'REJECTED'
+                  ? 'bg-status-rejected/10 text-status-rejected'
+                  : 'bg-status-pending/10 text-status-pending'
+
+              return (
+                <div key={doc.id} className="clay-card-hover p-4 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText size={20} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">{doc.name}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusClass}`}>
+                        {doc.verificationStatus}
+                      </span>
+                    </div>
+                    <p className="text-xs text-foreground-secondary mt-1">
+                      {doc.fileType?.toUpperCase()} · {(doc.fileSize / 1024 / 1024).toFixed(1)} MB · Uploaded by {doc.uploadedBy?.name || 'Unknown'}
+                    </p>
+                    {doc.verifiedBy && (
+                      <p className="text-xs text-foreground-secondary mt-1">
+                        Verified by {doc.verifiedBy?.name || 'Unknown'} on {doc.verifiedAt ? formatDate(doc.verifiedAt) : ''}
+                      </p>
+                    )}
+                    {doc.verificationRemarks && (
+                      <p className="text-xs text-foreground-secondary mt-1">
+                        Remarks: {doc.verificationRemarks}
+                      </p>
+                    )}
+                    {canVerifyDocuments && doc.verificationStatus === 'PENDING' && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <ClayButton variant="outline" size="xs" onClick={() => { setVerifyingDocId(doc.id); setDocRemarks(''); setShowVerifyModal(true) }}>
+                          Verify
+                        </ClayButton>
+                        <ClayButton variant="danger" size="xs" onClick={() => { setRejectingDocId(doc.id); setDocRemarks(''); setShowRejectModal(true) }}>
+                          Reject
+                        </ClayButton>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </ClayCard>
       </motion.div>
+
+      {/* Verify Document Modal */}
+      <Modal isOpen={showVerifyModal} onClose={() => { setShowVerifyModal(false); setVerifyingDocId(null); setDocRemarks('') }} title="Verify Document">
+        <div className="space-y-4">
+          <p className="text-sm text-foreground-secondary">
+            Document: {documents.find((d) => d.id === verifyingDocId)?.name}
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Verification Remarks</label>
+            <textarea
+              value={docRemarks}
+              onChange={(e) => setDocRemarks(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder="Optional remarks..."
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <ClayButton variant="outline" onClick={() => { setShowVerifyModal(false); setVerifyingDocId(null); setDocRemarks('') }} disabled={docActionLoading}>
+              Cancel
+            </ClayButton>
+            <ClayButton variant="success" onClick={handleVerifyDocument} loading={docActionLoading}>
+              Verify Document
+            </ClayButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reject Document Modal */}
+      <Modal isOpen={showRejectModal} onClose={() => { setShowRejectModal(false); setRejectingDocId(null); setDocRemarks('') }} title="Reject Document">
+        <div className="space-y-4">
+          <p className="text-sm text-foreground-secondary">
+            Document: {documents.find((d) => d.id === rejectingDocId)?.name}
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Reason for rejection *</label>
+            <textarea
+              value={docRemarks}
+              onChange={(e) => setDocRemarks(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-xl bg-surface border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder="Provide a reason for rejection..."
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <ClayButton variant="outline" onClick={() => { setShowRejectModal(false); setRejectingDocId(null); setDocRemarks('') }} disabled={docActionLoading}>
+              Cancel
+            </ClayButton>
+            <ClayButton variant="danger" onClick={handleRejectDocument} loading={docActionLoading}>
+              Reject Document
+            </ClayButton>
+          </div>
+        </div>
+      </Modal>
+
+      {(hasPermission('PROPOSALS_VIEW') && (user?.role === 'PROPOSAL_OFFICER' || user?.role === 'REVIEWING_AUTHORITY' || user?.role === 'SUPER_ADMIN')) && documents.length > 0 && (
+        <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
+          <ClayCard className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-success/10 flex items-center justify-center">
+                <ShieldCheck size={16} className="text-success" />
+              </div>
+              <h3 className="font-semibold text-foreground">Field Verification</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground-secondary">Status</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${proposal.status === 'FIELD_VERIFICATION' || proposal.status === 'UNDER_REVIEW' || proposal.status === 'APPROVED' ? 'bg-status-approved/10 text-status-approved' : 'bg-status-pending/10 text-status-pending'}`}>
+                  {proposal.status === 'FIELD_VERIFICATION' ? 'IN_PROGRESS' : proposal.status === 'UNDER_REVIEW' || proposal.status === 'APPROVED' ? 'VERIFIED' : 'PENDING'}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between">
+                    <span className="text-sm text-foreground">{doc.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${doc.verificationStatus === 'VERIFIED' ? 'bg-status-approved/10 text-status-approved' : doc.verificationStatus === 'REJECTED' ? 'bg-status-rejected/10 text-status-rejected' : 'bg-status-pending/10 text-status-pending'}`}>
+                      {doc.verificationStatus}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-foreground-secondary">
+                {documents.filter((d) => d.verificationStatus === 'VERIFIED').length} / {documents.length} documents verified
+              </div>
+            </div>
+          </ClayCard>
+        </motion.div>
+      )}
 
       {/* GIS Section */}
       <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>

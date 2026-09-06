@@ -105,9 +105,27 @@ const deleteNotification = async (req, res) => {
   }
 }
 
+const deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    let where = {}
+    if (req.user.role !== 'SUPER_ADMIN') {
+      where.userId = userId
+    }
+
+    await prisma.notification.deleteMany({ where })
+
+    return successResponse(res, { message: 'All notifications deleted successfully' })
+  } catch (error) {
+    return errorResponse(res, 'Failed to delete notifications', 500)
+  }
+}
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  deleteAllNotifications,
 }

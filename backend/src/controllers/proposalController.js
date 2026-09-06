@@ -75,7 +75,12 @@ const getProposalById = async (req, res) => {
         createdBy: { select: { name: true, email: true } },
         parcels: true,
         approvals: { include: { reviewer: { select: { name: true, email: true } } } },
-        documents: true,
+        documents: {
+          include: {
+            uploadedBy: { select: { name: true, email: true } },
+            verifiedBy: { select: { name: true, email: true } },
+          },
+        },
       },
     })
 
@@ -97,27 +102,55 @@ const createProposal = async (req, res) => {
   try {
     const data = proposalSchema.parse(req.body)
 
+    let proposalNumber = data.proposalNumber
+    if (!proposalNumber) {
+      const lastProposal = await prisma.proposal.findFirst({
+        orderBy: { proposalNumber: 'desc' },
+        select: { proposalNumber: true },
+      })
+      const lastNum = lastProposal
+        ? parseInt(lastProposal.proposalNumber.split('-').pop(), 10)
+        : 110
+      proposalNumber = `NLAMS-2026-${String(lastNum + 1).padStart(5, '0')}`
+    } else {
+      const existing = await prisma.proposal.findFirst({ where: { proposalNumber } })
+      if (existing) {
+        const lastProposal = await prisma.proposal.findFirst({
+          orderBy: { proposalNumber: 'desc' },
+          select: { proposalNumber: true },
+        })
+        const lastNum = lastProposal
+          ? parseInt(lastProposal.proposalNumber.split('-').pop(), 10)
+          : 110
+        proposalNumber = `NLAMS-2026-${String(lastNum + 1).padStart(5, '0')}`
+      }
+    }
+
+    const createData = {
+      ...data,
+      proposalNumber,
+      createdById: req.user.id,
+      submittedBy: req.user.name,
+      departmentId: req.user.departmentId,
+      targetCompletion: data.targetCompletion ? new Date(data.targetCompletion).toISOString() : undefined,
+      parcels: data.parcels
+        ? {
+            create: data.parcels.map((p) => ({
+              parcelNumber: p.parcelNumber,
+              area: p.area || 0,
+              landType: p.landType || data.landType,
+              status: p.status || 'pending',
+              surveyNo: p.surveyNo,
+              village: p.village,
+              owner: p.owner,
+              geometry: p.geometry,
+            })),
+          }
+        : undefined,
+    }
+
     const proposal = await prisma.proposal.create({
-      data: {
-        ...data,
-        createdById: req.user.id,
-        submittedBy: req.user.name,
-        departmentId: req.user.departmentId,
-        parcels: data.parcels
-          ? {
-              create: data.parcels.map((p) => ({
-                parcelNumber: p.parcelNumber,
-                area: p.area || 0,
-                landType: p.landType || data.landType,
-                status: p.status || 'pending',
-                surveyNo: p.surveyNo,
-                village: p.village,
-                owner: p.owner,
-                geometry: p.geometry,
-              })),
-            }
-          : undefined,
-      },
+      data: createData,
       include: {
         createdBy: { select: { name: true, email: true } },
         departmentRef: { select: { id: true, name: true, code: true } },
@@ -158,11 +191,19 @@ const updateProposal = async (req, res) => {
 
     const { status: _status, parcels: _parcels, ...rest } = data
 
+    const updateData = {
+      ...rest,
+      updatedById: req.user.id,
+    }
+
+    if (updateData.targetCompletion) {
+      updateData.targetCompletion = new Date(updateData.targetCompletion).toISOString()
+    }
+
     const proposal = await prisma.proposal.update({
       where: { id },
       data: {
-        ...rest,
-        updatedById: req.user.id,
+        ...updateData,
         parcels: _parcels
           ? {
               deleteMany: {},
@@ -295,8 +336,8 @@ const startReview = async (req, res) => {
       return errorResponse(res, 'Access denied', 403)
     }
 
-    if (proposal.status !== 'SUBMITTED') {
-      return errorResponse(res, 'Only submitted proposals can be sent for review', 400)
+    if (proposal.status !== 'FIELD_VERIFICATION') {
+      return errorResponse(res, 'Proposal must complete field verification before review', 400)
     }
 
     const updated = await prisma.proposal.update({
@@ -317,10 +358,9 @@ const startReview = async (req, res) => {
   }
 }
 
-const approveProposal = async (req, res) => {
+const startFieldVerification = async (req, res) => {
   try {
     const { id } = req.params
-    const { remarks } = approvalSchema.parse(req.body)
 
     const proposal = await prisma.proposal.findUnique({ where: { id } })
     if (!proposal) {
@@ -331,13 +371,113 @@ const approveProposal = async (req, res) => {
       return errorResponse(res, 'Access denied', 403)
     }
 
-  if (req.user.role !== 'REVIEWING_AUTHORITY') {
-    return errorResponse(res, 'Only Reviewing Authority can approve proposals', 403)
-  }
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'FIELD_OFFICER') {
+      return errorResponse(res, 'Only Field Officer can start field verification', 403)
+    }
 
-  if (proposal.status !== 'UNDER_REVIEW') {
-    return errorResponse(res, 'Proposal must be UNDER_REVIEW to be approved', 400)
+    if (proposal.status !== 'SUBMITTED') {
+      return errorResponse(res, 'Proposal must be SUBMITTED to start field verification', 400)
+    }
+
+    const updated = await prisma.proposal.update({
+      where: { id },
+      data: {
+        status: 'FIELD_VERIFICATION',
+        currentStage: 'Field Verification',
+        progress: 15,
+        updatedById: req.user.id,
+      },
+    })
+
+    await createAuditLog(req.user.id, 'Proposal', id, 'FIELD_VERIFICATION_STARTED', proposal, updated, null, proposal.departmentId)
+
+    return successResponse(res, updated)
+  } catch (error) {
+    return errorResponse(res, 'Failed to start field verification', 500)
   }
+}
+
+const completeVerification = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      include: { documents: true },
+    })
+    if (!proposal) {
+      return errorResponse(res, 'Proposal not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
+      return errorResponse(res, 'Access denied', 403)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'FIELD_OFFICER') {
+      return errorResponse(res, 'Only Field Officer can complete verification', 403)
+    }
+
+    if (proposal.status !== 'FIELD_VERIFICATION') {
+      return errorResponse(res, 'Proposal is not in field verification status', 400)
+    }
+
+    const pendingDocuments = proposal.documents.filter((d) => d.verificationStatus === 'PENDING')
+    if (pendingDocuments.length > 0) {
+      return errorResponse(res, 'All documents must be verified before completing field verification', 400)
+    }
+
+    const rejectedDocuments = proposal.documents.filter((d) => d.verificationStatus === 'REJECTED')
+    if (rejectedDocuments.length > 0) {
+      return errorResponse(res, 'Proposal has rejected documents and cannot proceed', 400)
+    }
+
+    const updated = await prisma.proposal.update({
+      where: { id },
+      data: {
+        status: 'UNDER_REVIEW',
+        currentStage: 'Administrative Review',
+        progress: 25,
+        updatedById: req.user.id,
+      },
+    })
+
+    await createAuditLog(req.user.id, 'Proposal', id, 'VERIFICATION_COMPLETED', proposal, updated, null, proposal.departmentId)
+
+    return successResponse(res, updated)
+  } catch (error) {
+    return errorResponse(res, 'Failed to complete verification', 500)
+  }
+}
+
+const approveProposal = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { remarks } = approvalSchema.parse(req.body)
+
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      include: { documents: true },
+    })
+    if (!proposal) {
+      return errorResponse(res, 'Proposal not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
+      return errorResponse(res, 'Access denied', 403)
+    }
+
+    if (req.user.role !== 'REVIEWING_AUTHORITY') {
+      return errorResponse(res, 'Only Reviewing Authority can approve proposals', 403)
+    }
+
+    if (proposal.status !== 'UNDER_REVIEW') {
+      return errorResponse(res, 'Proposal must be UNDER_REVIEW to be approved', 400)
+    }
+
+    const hasVerifiedDocuments = proposal.documents.length > 0 && proposal.documents.every((d) => d.verificationStatus === 'VERIFIED')
+    if (!hasVerifiedDocuments && proposal.documents.length > 0) {
+      return errorResponse(res, 'Proposal cannot be approved until all documents are verified', 400)
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.proposal.update({
@@ -517,6 +657,8 @@ module.exports = {
   deleteProposal,
   submitProposal,
   startReview,
+  startFieldVerification,
+  completeVerification,
   approveProposal,
   rejectProposal,
   requestChanges,

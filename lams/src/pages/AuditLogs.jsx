@@ -53,6 +53,8 @@ const AuditLogs = () => {
   const [recordTypeFilter, setRecordTypeFilter] = useState('')
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false)
+  const [deletingAll, setDeletingAll] = useState(false)
   const fetchedRef = useRef(false)
 
   const fetchLogs = async () => {
@@ -107,6 +109,22 @@ const AuditLogs = () => {
       toast.error({ title: 'Failed to delete audit log', message: err.response?.data?.message || 'Please try again' })
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleDeleteAll = async () => {
+    setDeletingAll(true)
+    try {
+      await auditApi.deleteAll()
+      setLogs([])
+      setTotal(0)
+      setTotalPages(1)
+      setShowDeleteAllModal(false)
+      toast.success({ title: 'All audit logs deleted' })
+    } catch (err) {
+      toast.error({ title: 'Failed to delete audit logs', message: err.response?.data?.message || 'Please try again' })
+    } finally {
+      setDeletingAll(false)
     }
   }
 
@@ -182,9 +200,16 @@ const AuditLogs = () => {
           <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
           <p className="text-sm text-text-secondary mt-1">Track all changes across the application</p>
         </div>
-        <ClayButton variant="outline" size="sm" onClick={fetchLogs} loading={loading}>
-          Refresh
-        </ClayButton>
+        <div className="flex items-center gap-2">
+          {user?.role === 'SUPER_ADMIN' && total > 0 && (
+            <ClayButton variant="outline" size="sm" icon={Trash2} onClick={() => setShowDeleteAllModal(true)}>
+              Clear All Logs
+            </ClayButton>
+          )}
+          <ClayButton variant="outline" size="sm" onClick={fetchLogs} loading={loading}>
+            Refresh
+          </ClayButton>
+        </div>
       </div>
 
       <ClayCard>
@@ -259,6 +284,28 @@ const AuditLogs = () => {
             </ClayButton>
             <ClayButton variant="danger" onClick={handleDelete} loading={deleting}>
               {deleting ? 'Deleting...' : 'Delete Audit Log'}
+            </ClayButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete All Confirmation Modal */}
+      <Modal isOpen={showDeleteAllModal} onClose={() => setShowDeleteAllModal(false)} title="Clear All Audit Logs">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+              Warning: You are about to permanently delete all audit logs. This action is irreversible.
+            </p>
+            <p className="text-sm text-foreground-secondary">
+              All audit logs will be permanently removed from the system. This cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <ClayButton variant="outline" onClick={() => setShowDeleteAllModal(false)} disabled={deletingAll}>
+              Cancel
+            </ClayButton>
+            <ClayButton variant="danger" onClick={handleDeleteAll} loading={deletingAll}>
+              {deletingAll ? 'Deleting...' : 'Delete All Audit Logs'}
             </ClayButton>
           </div>
         </div>

@@ -28,6 +28,8 @@ const NotificationsPage = () => {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [showClearAllModal, setShowClearAllModal] = useState(false)
+  const [clearingAll, setClearingAll] = useState(false)
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -98,8 +100,18 @@ const NotificationsPage = () => {
     }
   }
 
-  const clearAll = () => {
-    setNotifications([])
+  const clearAll = async () => {
+    setClearingAll(true)
+    try {
+      await notificationApi.deleteAll()
+      setNotifications([])
+      setShowClearAllModal(false)
+      toast.success({ title: 'All notifications cleared' })
+    } catch (err) {
+      console.error('Failed to clear notifications:', err)
+    } finally {
+      setClearingAll(false)
+    }
   }
 
   const typeIcons = {
@@ -149,7 +161,7 @@ const NotificationsPage = () => {
             </ClayButton>
           )}
           {hasPermission('NOTIFICATIONS_MANAGE') && (
-            <ClayButton variant="outline" size="sm" icon={Trash2} onClick={clearAll} disabled={notifications.length === 0}>
+            <ClayButton variant="outline" size="sm" icon={Trash2} onClick={() => setShowClearAllModal(true)} disabled={notifications.length === 0}>
               Clear All
             </ClayButton>
           )}
@@ -324,6 +336,28 @@ const NotificationsPage = () => {
             </ClayButton>
             <ClayButton variant="danger" onClick={() => handleDelete(deleteId)} loading={deleting}>
               {deleting ? 'Deleting...' : 'Delete Notification'}
+            </ClayButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Clear All Confirmation Modal */}
+      <Modal isOpen={showClearAllModal} onClose={() => setShowClearAllModal(false)} title="Clear All Notifications">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+              Warning: You are about to permanently delete all notifications. This action is irreversible.
+            </p>
+            <p className="text-sm text-foreground-secondary">
+              All notifications will be permanently removed from the system. This cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <ClayButton variant="outline" onClick={() => setShowClearAllModal(false)} disabled={clearingAll}>
+              Cancel
+            </ClayButton>
+            <ClayButton variant="danger" onClick={clearAll} loading={clearingAll}>
+              {clearingAll ? 'Clearing...' : 'Clear All Notifications'}
             </ClayButton>
           </div>
         </div>

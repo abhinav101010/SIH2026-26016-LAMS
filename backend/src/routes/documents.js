@@ -5,6 +5,8 @@ const {
   getDocuments,
   getDocumentById,
   deleteDocument,
+  verifyDocument,
+  rejectDocument,
 } = require('../controllers/documentController')
 const { authenticate, requirePermission } = require('../middleware/auth')
 const multer = require('multer')
@@ -29,5 +31,7 @@ router.post('/:proposalId/documents', authenticate, requirePermission('DOCUMENTS
 router.get('/:proposalId/documents', authenticate, requirePermission('DOCUMENTS_VIEW'), getDocuments)
 router.get('/:id', authenticate, requirePermission('DOCUMENTS_VIEW'), getDocumentById)
 router.delete('/:id', authenticate, requirePermission('DOCUMENTS_UPLOAD'), deleteDocument)
+router.post('/:id/verify', authenticate, requirePermission('DOCUMENTS_VERIFY'), verifyDocument)
+router.post('/:id/reject', authenticate, requirePermission('DOCUMENTS_VERIFY'), rejectDocument)
 
 module.exports = router

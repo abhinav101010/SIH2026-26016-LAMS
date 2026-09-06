@@ -1,6 +1,7 @@
 const prisma = require('../config/db')
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/response')
 const { documentSchema, paginationSchema } = require('../validators')
+const { createAuditLog } = require('../controllers/auditController')
 const path = require('path')
 const fs = require('fs')
 
@@ -61,6 +62,7 @@ const getDocuments = async (req, res) => {
         orderBy: { createdAt: 'desc' },
         include: {
           uploadedBy: { select: { name: true, email: true } },
+          verifiedBy: { select: { name: true, email: true } },
         },
       }),
       prisma.document.count({ where: { proposalId } }),
@@ -80,12 +82,19 @@ const getDocumentById = async (req, res) => {
       where: { id },
       include: {
         uploadedBy: { select: { name: true, email: true } },
-        proposal: { select: { proposalNumber: true, projectName: true } },
+        verifiedBy: { select: { name: true, email: true } },
+        proposal: { select: { proposalNumber: true, projectName: true, departmentId: true } },
       },
     })
 
     if (!document) {
       return errorResponse(res, 'Document not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN') {
+      if (document.proposal?.departmentId && document.proposal.departmentId !== req.user.departmentId) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     return successResponse(res, document)
@@ -98,9 +107,18 @@ const deleteDocument = async (req, res) => {
   try {
     const { id } = req.params
 
-    const document = await prisma.document.findUnique({ where: { id } })
+    const document = await prisma.document.findUnique({
+      where: { id },
+      include: { proposal: { select: { departmentId: true } } },
+    })
     if (!document) {
       return errorResponse(res, 'Document not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN') {
+      if (document.proposal?.departmentId && document.proposal.departmentId !== req.user.departmentId) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (fs.existsSync(document.storagePath)) {
@@ -115,9 +133,100 @@ const deleteDocument = async (req, res) => {
   }
 }
 
+const verifyDocument = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { remarks } = req.body
+
+    const document = await prisma.document.findUnique({
+      where: { id },
+      include: { proposal: { select: { departmentId: true, status: true } } },
+    })
+
+    if (!document) {
+      return errorResponse(res, 'Document not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN' && document.proposal?.departmentId !== req.user.departmentId) {
+      return errorResponse(res, 'Access denied', 403)
+    }
+
+    const updated = await prisma.document.update({
+      where: { id },
+      data: {
+        verificationStatus: 'VERIFIED',
+        verifiedById: req.user.id,
+        verifiedAt: new Date(),
+        verificationRemarks: remarks || null,
+      },
+      include: {
+        uploadedBy: { select: { name: true, email: true } },
+        verifiedBy: { select: { name: true, email: true } },
+      },
+    })
+
+    await prisma.proposal.updateMany({
+      where: { id: document.proposalId, status: 'SUBMITTED' },
+      data: { status: 'FIELD_VERIFICATION' },
+    })
+
+    await createAuditLog(req.user.id, 'Document', id, 'DOCUMENT_VERIFIED', { verificationStatus: 'PENDING' }, { verificationStatus: 'VERIFIED' }, { documentName: document.name }, document.proposal?.departmentId)
+
+    return successResponse(res, updated)
+  } catch (error) {
+    return errorResponse(res, 'Failed to verify document', 500)
+  }
+}
+
+const rejectDocument = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { remarks } = req.body
+
+    if (!remarks || !remarks.trim()) {
+      return errorResponse(res, 'Rejection reason is required', 400)
+    }
+
+    const document = await prisma.document.findUnique({
+      where: { id },
+      include: { proposal: { select: { departmentId: true } } },
+    })
+
+    if (!document) {
+      return errorResponse(res, 'Document not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN' && document.proposal?.departmentId !== req.user.departmentId) {
+      return errorResponse(res, 'Access denied', 403)
+    }
+
+    const updated = await prisma.document.update({
+      where: { id },
+      data: {
+        verificationStatus: 'REJECTED',
+        verifiedById: req.user.id,
+        verifiedAt: new Date(),
+        verificationRemarks: remarks,
+      },
+      include: {
+        uploadedBy: { select: { name: true, email: true } },
+        verifiedBy: { select: { name: true, email: true } },
+      },
+    })
+
+    await createAuditLog(req.user.id, 'Document', id, 'DOCUMENT_REJECTED', { verificationStatus: 'PENDING' }, { verificationStatus: 'REJECTED', reason: remarks }, { documentName: document.name }, document.proposal?.departmentId)
+
+    return successResponse(res, updated)
+  } catch (error) {
+    return errorResponse(res, 'Failed to reject document', 500)
+  }
+}
+
 module.exports = {
   uploadDocument,
   getDocuments,
   getDocumentById,
   deleteDocument,
+  verifyDocument,
+  rejectDocument,
 }

@@ -12,4 +12,7 @@ export const notificationApi = {
 
   delete: (id) =>
     api.delete(`/notifications/${id}`).then((r) => r.data),
+
+  deleteAll: () =>
+    api.delete('/notifications').then((r) => r.data),
 }

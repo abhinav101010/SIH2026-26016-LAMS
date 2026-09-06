@@ -6,4 +6,7 @@ export const auditApi = {
 
   delete: (id) =>
     api.delete(`/audit-logs/${id}`).then((r) => r.data),
+
+  deleteAll: () =>
+    api.delete('/audit-logs').then((r) => r.data),
 }

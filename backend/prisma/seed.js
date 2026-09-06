@@ -9,7 +9,35 @@ async function main() {
   await prisma.notification.deleteMany()
   await prisma.proposal.deleteMany()
 
-  const hashedPassword = await bcrypt.hash('admin123', 10)
+  const hashedPassword = await bcrypt.hash('123456', 10)
+
+  const departments = [
+    { name: 'NHAI', code: 'NHAI', description: 'National Highways Authority of India' },
+    { name: 'Indian Railways', code: 'IR', description: 'Indian Railways' },
+    { name: 'Ministry of Road Transport & Highways', code: 'MORTH', description: 'Ministry of Road Transport & Highways' },
+    { name: 'Ministry of Commerce', code: 'MOC', description: 'Ministry of Commerce' },
+    { name: 'Power Grid Corporation', code: 'PGCIL', description: 'Power Grid Corporation' },
+    { name: 'Hyderabad Metro Rail', code: 'HMRL', description: 'Hyderabad Metro Rail' },
+    { name: 'Uttar Pradesh PWD', code: 'UPPWD', description: 'Uttar Pradesh Public Works Department' },
+    { name: 'KMRL', code: 'KMRL', description: 'Kochi Metro Rail Limited' },
+    { name: 'NCRTC', code: 'NCRTC', description: 'National Capital Region Transport Corporation' },
+    { name: 'Bhubaneswar Smart City', code: 'BSCL', description: 'Bhubaneswar Smart City Limited' },
+    { name: 'Karnataka PWD', code: 'KPWD', description: 'Karnataka Public Works Department' },
+    { name: 'GAIL', code: 'GAIL', description: 'Gas Authority of India Limited' },
+    { name: 'Patna Metro Rail', code: 'PMR', description: 'Patna Metro Rail' },
+    { name: 'Airports Authority of India', code: 'AAI', description: 'Airports Authority of India' },
+  ]
+
+  const deptMap = {}
+  for (const d of departments) {
+    const dept = await prisma.department.upsert({
+      where: { name: d.name },
+      update: {},
+      create: d,
+    })
+    deptMap[d.name] = dept.id
+    console.log('Department ready:', d.name)
+  }
 
   const users = await prisma.user.createMany({
     data: [
@@ -19,6 +47,7 @@ async function main() {
         password: hashedPassword,
         role: 'SUPER_ADMIN',
         department: 'Ministry of Road Transport & Highways',
+        departmentId: deptMap['Ministry of Road Transport & Highways'],
         phone: '+91-98765-43210',
         employeeId: 'NLAMS/ADMIN/001',
         joinedDate: new Date('2024-03-15'),
@@ -30,6 +59,7 @@ async function main() {
         password: hashedPassword,
         role: 'PROPOSAL_OFFICER',
         department: 'NHAI',
+        departmentId: deptMap['NHAI'],
         phone: '+91-98765-43211',
         employeeId: 'NLAMS/OFF/002',
         joinedDate: new Date('2024-04-01'),
@@ -40,6 +70,7 @@ async function main() {
         password: hashedPassword,
         role: 'REVIEWING_AUTHORITY',
         department: 'Ministry of Road Transport & Highways',
+        departmentId: deptMap['Ministry of Road Transport & Highways'],
         phone: '+91-98765-43212',
         employeeId: 'NLAMS/REV/003',
         joinedDate: new Date('2024-04-15'),
@@ -50,6 +81,7 @@ async function main() {
         password: hashedPassword,
         role: 'FIELD_OFFICER',
         department: 'NHAI',
+        departmentId: deptMap['NHAI'],
         phone: '+91-98765-43213',
         employeeId: 'NLAMS/FLD/004',
         joinedDate: new Date('2024-05-01'),
@@ -60,6 +92,7 @@ async function main() {
         password: hashedPassword,
         role: 'VIEWER',
         department: 'Ministry of Road Transport & Highways',
+        departmentId: deptMap['Ministry of Road Transport & Highways'],
         phone: '+91-98765-43214',
         employeeId: 'NLAMS/VIEW/005',
         joinedDate: new Date('2024-05-15'),
@@ -85,21 +118,21 @@ async function main() {
   console.log('Projects seeded:', projects.count)
 
   const proposals = [
-    { proposalNumber: 'NLAMS-2026-00124', projectName: 'Delhi–Mumbai Expressway (Phase II)', projectType: 'Highway', department: 'NHAI', state: 'Haryana', district: 'Gurugram', totalLandRequired: 240, numberOfParcels: 4, landType: 'Agricultural', affectedFamilies: 342, purpose: 'Expansion of the Delhi–Mumbai Expressway.', estimatedCost: 8420, status: 'APPROVED', priority: 'High', progress: 78, submittedDate: new Date('2026-08-24'), targetCompletion: new Date('2027-03-15'), description: 'Expansion of the Delhi–Mumbai Expressway.', currentStage: 'Notification', submittedBy: 'NHAI' },
-    { proposalNumber: 'NLAMS-2026-00123', projectName: 'Mumbai-Ahmedabad High-Speed Rail Corridor', projectType: 'Railway', department: 'Indian Railways', state: 'Maharashtra', district: 'Ahmednagar', totalLandRequired: 560, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 890, purpose: 'Bullet train corridor connecting Mumbai and Ahmedabad.', estimatedCost: 12800, status: 'APPROVED', priority: 'Critical', progress: 65, submittedDate: new Date('2026-08-22'), targetCompletion: new Date('2028-06-30'), description: 'Bullet train corridor.', currentStage: 'Award', submittedBy: 'Indian Railways' },
-    { proposalNumber: 'NLAMS-2026-00122', projectName: 'Chennai-Bengaluru Industrial Corridor', projectType: 'Industrial Sector', department: 'Ministry of Commerce', state: 'Tamil Nadu', district: 'Chennai', totalLandRequired: 1120, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 1250, purpose: 'Industrial corridor development.', estimatedCost: 15600, status: 'ACQUIRED', priority: 'High', progress: 95, submittedDate: new Date('2026-08-20'), targetCompletion: new Date('2026-12-31'), description: 'Industrial corridor development.', currentStage: 'Compensation', submittedBy: 'Ministry of Commerce' },
-    { proposalNumber: 'NLAMS-2026-00121', projectName: 'Jaipur-Kota Transmission Line Upgrade', projectType: 'Power Line', department: 'Power Grid Corporation', state: 'Rajasthan', district: 'Kota', totalLandRequired: 85, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 156, purpose: 'Transmission infrastructure upgrade.', estimatedCost: 2100, status: 'UNDER_REVIEW', priority: 'Medium', progress: 42, submittedDate: new Date('2026-08-18'), targetCompletion: new Date('2027-09-30'), description: 'Transmission infrastructure upgrade.', currentStage: 'Administrative Review', submittedBy: 'Power Grid Corporation' },
-    { proposalNumber: 'NLAMS-2026-00120', projectName: 'Hyderabad Metro Rail Phase III', projectType: 'Urban Infrastructure', department: 'Hyderabad Metro Rail', state: 'Telangana', district: 'Hyderabad', totalLandRequired: 65, numberOfParcels: 2, landType: 'Commercial', affectedFamilies: 89, purpose: 'Metro extension.', estimatedCost: 4250, status: 'APPROVED', priority: 'Medium', progress: 55, submittedDate: new Date('2026-08-15'), targetCompletion: new Date('2028-03-31'), description: 'Metro extension.', currentStage: 'Award', submittedBy: 'Hyderabad Metro Rail' },
-    { proposalNumber: 'NLAMS-2026-00119', projectName: 'Lucknow-Agra Expressway Maintenance', projectType: 'Highway', department: 'Uttar Pradesh PWD', state: 'Uttar Pradesh', district: 'Agra', totalLandRequired: 120, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 210, purpose: 'Highway maintenance.', estimatedCost: 1850, status: 'DRAFT', priority: 'High', progress: 25, submittedDate: new Date('2026-08-12'), targetCompletion: new Date('2027-06-30'), description: 'Highway maintenance.', currentStage: 'Document Verification', submittedBy: 'Uttar Pradesh PWD' },
-    { proposalNumber: 'NLAMS-2026-00118', projectName: 'Kochi Metro Rail Extension', projectType: 'Urban Infrastructure', department: 'KMRL', state: 'Kerala', district: 'Ernakulam', totalLandRequired: 45, numberOfParcels: 1, landType: 'Residential', affectedFamilies: 76, purpose: 'Metro extension in Kochi.', estimatedCost: 1980, status: 'UNDER_REVIEW', priority: 'Medium', progress: 38, submittedDate: new Date('2026-08-10'), targetCompletion: new Date('2027-12-31'), description: 'Metro extension in Kochi.', currentStage: 'Administrative Review', submittedBy: 'KMRL' },
-    { proposalNumber: 'NLAMS-2026-00117', projectName: 'Noida-Greater Noida Metro Line', projectType: 'Urban Infrastructure', department: 'NCRTC', state: 'Uttar Pradesh', district: 'Gaziabad', totalLandRequired: 95, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 168, purpose: 'Noida-Greater Noida metro.', estimatedCost: 3750, status: 'APPROVED', priority: 'High', progress: 60, submittedDate: new Date('2026-08-08'), targetCompletion: new Date('2027-09-30'), description: 'Noida-Greater Noida metro.', currentStage: 'Award', submittedBy: 'NCRTC' },
-    { proposalNumber: 'NLAMS-2026-00116', projectName: 'Bhubaneswar Smart City Drainage Project', projectType: 'Urban Infrastructure', department: 'Bhubaneswar Smart City', state: 'Odisha', district: 'Khordha', totalLandRequired: 75, numberOfParcels: 1, landType: 'Wasteland', affectedFamilies: 134, purpose: 'Drainage upgrade.', estimatedCost: 860, status: 'REJECTED', priority: 'Low', progress: 30, submittedDate: new Date('2026-08-05'), targetCompletion: new Date('2027-04-30'), description: 'Drainage upgrade.', currentStage: 'Approved', submittedBy: 'Bhubaneswar Smart City' },
-    { proposalNumber: 'NLAMS-2026-00115', projectName: 'Amritsar-Kolkata Railway Doubling', projectType: 'Railway', department: 'Indian Railways', state: 'Punjab', district: 'Amritsar', totalLandRequired: 340, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 567, purpose: 'Railway doubling.', estimatedCost: 18200, status: 'ACQUIRED', priority: 'High', progress: 92, submittedDate: new Date('2026-08-03'), targetCompletion: new Date('2027-02-28'), description: 'Railway doubling.', currentStage: 'Compensation', submittedBy: 'Indian Railways' },
-    { proposalNumber: 'NLAMS-2026-00114', projectName: 'Bangalore-Mysore Expressway Land Acquisition', projectType: 'Highway', department: 'Karnataka PWD', state: 'Karnataka', district: 'Mandya', totalLandRequired: 180, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 423, purpose: 'Expressway expansion.', estimatedCost: 4200, status: 'DRAFT', priority: 'High', progress: 10, submittedDate: new Date('2026-07-30'), targetCompletion: new Date('2028-03-31'), description: 'Expressway expansion.', currentStage: 'Proposal Submitted', submittedBy: 'Karnataka PWD' },
-    { proposalNumber: 'NLAMS-2026-00113', projectName: 'Hyderabad-Warangal Gas Pipeline', projectType: 'Pipeline', department: 'GAIL', state: 'Telangana', district: 'Nalgonda', totalLandRequired: 135, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 312, purpose: 'Gas pipeline project.', estimatedCost: 9500, status: 'APPROVED', priority: 'Medium', progress: 70, submittedDate: new Date('2026-07-28'), targetCompletion: new Date('2027-10-31'), description: 'Gas pipeline project.', currentStage: 'Notification', submittedBy: 'GAIL' },
-    { proposalNumber: 'NLAMS-2026-00112', projectName: 'Patna Metro Rail Project', projectType: 'Urban Infrastructure', department: 'Patna Metro Rail', state: 'Bihar', district: 'Patna', totalLandRequired: 80, numberOfParcels: 2, landType: 'Residential', affectedFamilies: 201, purpose: 'Patna metro project.', estimatedCost: 3400, status: 'UNDER_REVIEW', priority: 'High', progress: 45, submittedDate: new Date('2026-07-25'), targetCompletion: new Date('2028-12-31'), description: 'Patna metro project.', currentStage: 'Administrative Review', submittedBy: 'Patna Metro Rail' },
-    { proposalNumber: 'NLAMS-2026-00111', projectName: 'Guwahati Airport Expansion', projectType: 'Airport', department: 'Airports Authority of India', state: 'Assam', district: 'Kamrup', totalLandRequired: 210, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 89, purpose: 'Airport expansion.', estimatedCost: 1850, status: 'APPROVED', priority: 'High', progress: 85, submittedDate: new Date('2026-07-20'), targetCompletion: new Date('2027-03-31'), description: 'Airport expansion.', currentStage: 'Award', submittedBy: 'AAI' },
-    { proposalNumber: 'NLAMS-2026-00110', projectName: 'Ranchi-Dumka Railway Line', projectType: 'Railway', department: 'Indian Railways', state: 'Jharkhand', district: 'Dumka', totalLandRequired: 160, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 298, purpose: 'New railway line.', estimatedCost: 5600, status: 'ACQUIRED', priority: 'Medium', progress: 90, submittedDate: new Date('2026-07-15'), targetCompletion: new Date('2027-01-31'), description: 'New railway line.', currentStage: 'Compensation', submittedBy: 'Indian Railways' },
+    { proposalNumber: 'NLAMS-2026-00124', projectName: 'Delhi–Mumbai Expressway (Phase II)', projectType: 'Highway', department: 'NHAI', departmentId: deptMap['NHAI'], state: 'Haryana', district: 'Gurugram', totalLandRequired: 240, numberOfParcels: 4, landType: 'Agricultural', affectedFamilies: 342, purpose: 'Expansion of the Delhi–Mumbai Expressway.', estimatedCost: 8420, status: 'APPROVED', priority: 'High', progress: 78, submittedDate: new Date('2026-08-24'), targetCompletion: new Date('2027-03-15'), description: 'Expansion of the Delhi–Mumbai Expressway.', currentStage: 'Notification', submittedBy: 'NHAI' },
+    { proposalNumber: 'NLAMS-2026-00123', projectName: 'Mumbai-Ahmedabad High-Speed Rail Corridor', projectType: 'Railway', department: 'Indian Railways', departmentId: deptMap['Indian Railways'], state: 'Maharashtra', district: 'Ahmednagar', totalLandRequired: 560, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 890, purpose: 'Bullet train corridor connecting Mumbai and Ahmedabad.', estimatedCost: 12800, status: 'APPROVED', priority: 'Critical', progress: 65, submittedDate: new Date('2026-08-22'), targetCompletion: new Date('2028-06-30'), description: 'Bullet train corridor.', currentStage: 'Award', submittedBy: 'Indian Railways' },
+    { proposalNumber: 'NLAMS-2026-00122', projectName: 'Chennai-Bengaluru Industrial Corridor', projectType: 'Industrial Sector', department: 'Ministry of Commerce', departmentId: deptMap['Ministry of Commerce'], state: 'Tamil Nadu', district: 'Chennai', totalLandRequired: 1120, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 1250, purpose: 'Industrial corridor development.', estimatedCost: 15600, status: 'ACQUIRED', priority: 'High', progress: 95, submittedDate: new Date('2026-08-20'), targetCompletion: new Date('2026-12-31'), description: 'Industrial corridor development.', currentStage: 'Compensation', submittedBy: 'Ministry of Commerce' },
+    { proposalNumber: 'NLAMS-2026-00121', projectName: 'Jaipur-Kota Transmission Line Upgrade', projectType: 'Power Line', department: 'Power Grid Corporation', departmentId: deptMap['Power Grid Corporation'], state: 'Rajasthan', district: 'Kota', totalLandRequired: 85, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 156, purpose: 'Transmission infrastructure upgrade.', estimatedCost: 2100, status: 'UNDER_REVIEW', priority: 'Medium', progress: 42, submittedDate: new Date('2026-08-18'), targetCompletion: new Date('2027-09-30'), description: 'Transmission infrastructure upgrade.', currentStage: 'Administrative Review', submittedBy: 'Power Grid Corporation' },
+    { proposalNumber: 'NLAMS-2026-00120', projectName: 'Hyderabad Metro Rail Phase III', projectType: 'Urban Infrastructure', department: 'Hyderabad Metro Rail', departmentId: deptMap['Hyderabad Metro Rail'], state: 'Telangana', district: 'Hyderabad', totalLandRequired: 65, numberOfParcels: 2, landType: 'Commercial', affectedFamilies: 89, purpose: 'Metro extension.', estimatedCost: 4250, status: 'APPROVED', priority: 'Medium', progress: 55, submittedDate: new Date('2026-08-15'), targetCompletion: new Date('2028-03-31'), description: 'Metro extension.', currentStage: 'Award', submittedBy: 'Hyderabad Metro Rail' },
+    { proposalNumber: 'NLAMS-2026-00119', projectName: 'Lucknow-Agra Expressway Maintenance', projectType: 'Highway', department: 'Uttar Pradesh PWD', departmentId: deptMap['Uttar Pradesh PWD'], state: 'Uttar Pradesh', district: 'Agra', totalLandRequired: 120, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 210, purpose: 'Highway maintenance.', estimatedCost: 1850, status: 'DRAFT', priority: 'High', progress: 25, submittedDate: new Date('2026-08-12'), targetCompletion: new Date('2027-06-30'), description: 'Highway maintenance.', currentStage: 'Document Verification', submittedBy: 'Uttar Pradesh PWD' },
+    { proposalNumber: 'NLAMS-2026-00118', projectName: 'Kochi Metro Rail Extension', projectType: 'Urban Infrastructure', department: 'KMRL', departmentId: deptMap['KMRL'], state: 'Kerala', district: 'Ernakulam', totalLandRequired: 45, numberOfParcels: 1, landType: 'Residential', affectedFamilies: 76, purpose: 'Metro extension in Kochi.', estimatedCost: 1980, status: 'UNDER_REVIEW', priority: 'Medium', progress: 38, submittedDate: new Date('2026-08-10'), targetCompletion: new Date('2027-12-31'), description: 'Metro extension in Kochi.', currentStage: 'Administrative Review', submittedBy: 'KMRL' },
+    { proposalNumber: 'NLAMS-2026-00117', projectName: 'Noida-Greater Noida Metro Line', projectType: 'Urban Infrastructure', department: 'NCRTC', departmentId: deptMap['NCRTC'], state: 'Uttar Pradesh', district: 'Gaziabad', totalLandRequired: 95, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 168, purpose: 'Noida-Greater Noida metro.', estimatedCost: 3750, status: 'APPROVED', priority: 'High', progress: 60, submittedDate: new Date('2026-08-08'), targetCompletion: new Date('2027-09-30'), description: 'Noida-Greater Noida metro.', currentStage: 'Award', submittedBy: 'NCRTC' },
+    { proposalNumber: 'NLAMS-2026-00116', projectName: 'Bhubaneswar Smart City Drainage Project', projectType: 'Urban Infrastructure', department: 'Bhubaneswar Smart City', departmentId: deptMap['Bhubaneswar Smart City'], state: 'Odisha', district: 'Khordha', totalLandRequired: 75, numberOfParcels: 1, landType: 'Wasteland', affectedFamilies: 134, purpose: 'Drainage upgrade.', estimatedCost: 860, status: 'REJECTED', priority: 'Low', progress: 30, submittedDate: new Date('2026-08-05'), targetCompletion: new Date('2027-04-30'), description: 'Drainage upgrade.', currentStage: 'Approved', submittedBy: 'Bhubaneswar Smart City' },
+    { proposalNumber: 'NLAMS-2026-00115', projectName: 'Amritsar-Kolkata Railway Doubling', projectType: 'Railway', department: 'Indian Railways', departmentId: deptMap['Indian Railways'], state: 'Punjab', district: 'Amritsar', totalLandRequired: 340, numberOfParcels: 3, landType: 'Agricultural', affectedFamilies: 567, purpose: 'Railway doubling.', estimatedCost: 18200, status: 'ACQUIRED', priority: 'High', progress: 92, submittedDate: new Date('2026-08-03'), targetCompletion: new Date('2027-02-28'), description: 'Railway doubling.', currentStage: 'Compensation', submittedBy: 'Indian Railways' },
+    { proposalNumber: 'NLAMS-2026-00114', projectName: 'Bangalore-Mysore Expressway Land Acquisition', projectType: 'Highway', department: 'Karnataka PWD', departmentId: deptMap['Karnataka PWD'], state: 'Karnataka', district: 'Mandya', totalLandRequired: 180, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 423, purpose: 'Expressway expansion.', estimatedCost: 4200, status: 'DRAFT', priority: 'High', progress: 10, submittedDate: new Date('2026-07-30'), targetCompletion: new Date('2028-03-31'), description: 'Expressway expansion.', currentStage: 'Proposal Submitted', submittedBy: 'Karnataka PWD' },
+    { proposalNumber: 'NLAMS-2026-00113', projectName: 'Hyderabad-Warangal Gas Pipeline', projectType: 'Pipeline', department: 'GAIL', departmentId: deptMap['GAIL'], state: 'Telangana', district: 'Nalgonda', totalLandRequired: 135, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 312, purpose: 'Gas pipeline project.', estimatedCost: 9500, status: 'APPROVED', priority: 'Medium', progress: 70, submittedDate: new Date('2026-07-28'), targetCompletion: new Date('2027-10-31'), description: 'Gas pipeline project.', currentStage: 'Notification', submittedBy: 'GAIL' },
+    { proposalNumber: 'NLAMS-2026-00112', projectName: 'Patna Metro Rail Project', projectType: 'Urban Infrastructure', department: 'Patna Metro Rail', departmentId: deptMap['Patna Metro Rail'], state: 'Bihar', district: 'Patna', totalLandRequired: 80, numberOfParcels: 2, landType: 'Residential', affectedFamilies: 201, purpose: 'Patna metro project.', estimatedCost: 3400, status: 'UNDER_REVIEW', priority: 'High', progress: 45, submittedDate: new Date('2026-07-25'), targetCompletion: new Date('2028-12-31'), description: 'Patna metro project.', currentStage: 'Administrative Review', submittedBy: 'Patna Metro Rail' },
+    { proposalNumber: 'NLAMS-2026-00111', projectName: 'Guwahati Airport Expansion', projectType: 'Airport', department: 'Airports Authority of India', departmentId: deptMap['Airports Authority of India'], state: 'Assam', district: 'Kamrup', totalLandRequired: 210, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 89, purpose: 'Airport expansion.', estimatedCost: 1850, status: 'APPROVED', priority: 'High', progress: 85, submittedDate: new Date('2026-07-20'), targetCompletion: new Date('2027-03-31'), description: 'Airport expansion.', currentStage: 'Award', submittedBy: 'AAI' },
+    { proposalNumber: 'NLAMS-2026-00110', projectName: 'Ranchi-Dumka Railway Line', projectType: 'Railway', department: 'Indian Railways', departmentId: deptMap['Indian Railways'], state: 'Jharkhand', district: 'Dumka', totalLandRequired: 160, numberOfParcels: 2, landType: 'Agricultural', affectedFamilies: 298, purpose: 'New railway line.', estimatedCost: 5600, status: 'ACQUIRED', priority: 'Medium', progress: 90, submittedDate: new Date('2026-07-15'), targetCompletion: new Date('2027-01-31'), description: 'New railway line.', currentStage: 'Compensation', submittedBy: 'Indian Railways' },
   ]
 
   for (const p of proposals) {
@@ -213,7 +246,7 @@ async function main() {
   const rolePermissions = [
     { role: 'VIEWER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','PROPOSALS_VIEW','DOCUMENTS_VIEW','NOTIFICATIONS_VIEW'] },
     { role: 'FIELD_OFFICER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','PROPOSALS_VIEW','UPDATE_PARCELS','DOCUMENTS_VIEW','DOCUMENTS_UPLOAD','NOTIFICATIONS_VIEW','AUDIT_VIEW','MANAGE_POSSESSION'] },
-    { role: 'PROPOSAL_OFFICER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','DASHBOARD_STATS','PROPOSALS_VIEW','PROPOSALS_CREATE','PROPOSALS_EDIT','PROPOSALS_SUBMIT','DOCUMENTS_VIEW','DOCUMENTS_UPLOAD','NOTIFICATIONS_VIEW','SETTINGS_VIEW','AUDIT_VIEW'] },
+    { role: 'PROPOSAL_OFFICER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','DASHBOARD_STATS','PROPOSALS_VIEW','PROPOSALS_CREATE','PROPOSALS_EDIT','PROPOSALS_SUBMIT','PROPOSALS_DELETE','DOCUMENTS_VIEW','DOCUMENTS_UPLOAD','NOTIFICATIONS_VIEW','SETTINGS_VIEW','AUDIT_VIEW'] },
     { role: 'REVIEWING_AUTHORITY', permissions: ['GIS_VIEW','DASHBOARD_VIEW','DASHBOARD_STATS','PROPOSALS_VIEW','PROPOSALS_APPROVE','PROPOSALS_REJECT','DOCUMENTS_VIEW','DOCUMENTS_VERIFY','NOTIFICATIONS_VIEW','SETTINGS_VIEW','AUDIT_VIEW'] },
     { role: 'SUPER_ADMIN', permissions: ['ROLES_EDIT','ROLES_DELETE','GIS_VIEW','GIS_EDIT','DASHBOARD_VIEW','DASHBOARD_STATS','GIS_EXPORT','PROPOSALS_VIEW','PROPOSALS_CREATE','PROPOSALS_EDIT','PROPOSALS_SUBMIT','PROPOSALS_APPROVE','PROPOSALS_REJECT','PROPOSALS_DELETE','USERS_VIEW','USERS_CREATE','USERS_EDIT','USERS_DELETE','USERS_CHANGE_ROLE','USERS_RESET_PASSWORD','ROLES_VIEW','UPDATE_PARCELS','DOCUMENTS_VIEW','DOCUMENTS_UPLOAD','DOCUMENTS_VERIFY','REPORTS_VIEW','REPORTS_EXPORT','NOTIFICATIONS_VIEW','NOTIFICATIONS_MANAGE','SETTINGS_VIEW','SETTINGS_EDIT','AUDIT_VIEW','AUDIT_EXPORT','MANAGE_COMPENSATION','MANAGE_POSSESSION','ROLES_CREATE'] },
   ]

@@ -23,7 +23,7 @@ const updateProfileSchema = z.object({
 })
 
 const proposalSchema = z.object({
-  proposalNumber: z.string().min(1, 'Proposal number is required'),
+  proposalNumber: z.string().optional(),
   projectName: z.string().min(1, 'Project name is required'),
   projectType: z.string().min(1, 'Project type is required'),
   department: z.string().min(1, 'Department is required'),
@@ -61,8 +61,8 @@ const documentSchema = z.object({
   name: z.string().min(1, 'Document name is required'),
   fileName: z.string().min(1, 'File name is required'),
   fileType: z.string().min(1, 'File type is required'),
-  fileSize: z.number().positive('File size must be positive'),
-  storagePath: z.string().min(1, 'Storage path is required'),
+  fileSize: z.coerce.number().positive('File size must be positive'),
+  storagePath: z.string().optional(),
 })
 
 const paginationSchema = z.object({

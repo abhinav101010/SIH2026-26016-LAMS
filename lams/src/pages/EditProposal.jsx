@@ -30,7 +30,7 @@ import { useToast } from '../components/ui/Toast'
 import { STATES, DEPARTMENTS, PROJECT_TYPES, LAND_TYPES } from '../data'
 import { MapContainer, TileLayer, Polygon, Polyline, Marker, Popup } from 'react-leaflet'
 import MapClickHandler from '../components/gis/MapClickHandler'
-import { proposalApi, parcelApi } from '../services'
+import { proposalApi, parcelApi, documentApi } from '../services'
 import { useParams, useNavigate } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 
@@ -98,7 +98,10 @@ const EditProposal = () => {
           description: p.description || '',
           targetCompletion: p.targetCompletion ? p.targetCompletion.split('T')[0] : '',
         })
-        setDocuments(p.documents || [])
+        setDocuments((p.documents || []).map((doc) => ({
+          ...doc,
+          size: doc.fileSize,
+        })))
         if (p.parcels && p.parcels.length > 0) {
           const polygons = p.parcels.map((parcel) => {
             let geometry = null
@@ -152,11 +155,6 @@ const EditProposal = () => {
         geometry: typeof shape.geometry === 'string' ? shape.geometry : JSON.stringify(shape.geometry),
       }))
 
-      if (parcels.length === 0) {
-        toast.error({ title: 'GIS Required', message: 'Please draw at least one land parcel on the map before saving.' })
-        return
-      }
-
       const payload = {
         proposalNumber: formData.proposalNumber,
         projectName: formData.projectName,
@@ -175,10 +173,26 @@ const EditProposal = () => {
         priority: formData.priority,
         description: formData.description,
         targetCompletion: formData.targetCompletion,
-        parcels,
+      }
+
+      if (parcels.length > 0) {
+        payload.parcels = parcels
       }
 
       await proposalApi.update(id, payload)
+
+      const newDocuments = documents.filter((doc) => !doc.id && doc instanceof File)
+      for (const doc of newDocuments) {
+        const formData = new FormData()
+        formData.append('file', doc)
+        formData.append('name', doc.name)
+        formData.append('fileName', doc.name)
+        formData.append('fileType', doc.type || 'application/pdf')
+        formData.append('fileSize', String(doc.size))
+        formData.append('storagePath', '')
+        await documentApi.upload(id, formData)
+      }
+
       toast.success({ title: 'Proposal saved', message: 'Your draft has been saved successfully.' })
       navigate(`/proposals/${id}`)
     } catch (err) {
@@ -203,11 +217,6 @@ const EditProposal = () => {
         geometry: typeof shape.geometry === 'string' ? shape.geometry : JSON.stringify(shape.geometry),
       }))
 
-      if (parcels.length === 0) {
-        toast.error({ title: 'GIS Required', message: 'Please draw at least one land parcel on the map before submitting.' })
-        return
-      }
-
       const payload = {
         proposalNumber: formData.proposalNumber,
         projectName: formData.projectName,
@@ -226,10 +235,26 @@ const EditProposal = () => {
         priority: formData.priority,
         description: formData.description,
         targetCompletion: formData.targetCompletion,
-        parcels,
+      }
+
+      if (parcels.length > 0) {
+        payload.parcels = parcels
       }
 
       await proposalApi.update(id, payload)
+
+      const newDocuments = documents.filter((doc) => !doc.id && doc instanceof File)
+      for (const doc of newDocuments) {
+        const formData = new FormData()
+        formData.append('file', doc)
+        formData.append('name', doc.name)
+        formData.append('fileName', doc.name)
+        formData.append('fileType', doc.type || 'application/pdf')
+        formData.append('fileSize', String(doc.size))
+        formData.append('storagePath', '')
+        await documentApi.upload(id, formData)
+      }
+
       await proposalApi.submit(id)
       toast.success({ title: 'Proposal submitted', message: 'Your proposal has been submitted successfully.' })
       navigate(`/proposals/${id}`)

@@ -30,7 +30,7 @@ import { useToast } from '../components/ui/Toast'
 import { STATES, DEPARTMENTS, PROJECT_TYPES, LAND_TYPES } from '../data'
 import { MapContainer, TileLayer, Polygon, Polyline, Marker, Popup } from 'react-leaflet'
 import MapClickHandler from '../components/gis/MapClickHandler'
-import { proposalApi } from '../services'
+import { proposalApi, documentApi } from '../services'
 import 'leaflet/dist/leaflet.css'
 
 const STEPS = [
@@ -48,21 +48,25 @@ const CreateProposal = () => {
   const [submitted, setSubmitted] = useState(false)
   const [createdProposalId, setCreatedProposalId] = useState(null)
 
-  const [formData, setFormData] = useState({
-    projectName: 'Delhi-Mumbai Expressway (Phase III)',
-    projectType: 'Highway',
-    department: 'National Highway Authority of India',
-    ministry: 'Ministry of Road Transport & Highways',
-    state: 'Haryana',
-    district: 'Gurgaon',
-    purpose: 'Widening and upgrading of national highway to improve connectivity',
-    estimatedCost: 12500,
-    totalLandRequired: 280,
-    numberOfParcels: 12,
-    landType: 'Agricultural',
-    affectedFamilies: 420,
-    proposalNumber: 'NLAMS-2026-00125',
-  })
+   const [formData, setFormData] = useState({
+     projectName: 'Delhi-Mumbai Expressway (Phase III)',
+     projectType: 'Highway',
+     department: 'NHAI',
+     ministry: 'Ministry of Road Transport & Highways',
+     state: 'Haryana',
+     district: 'Gurgaon',
+     purpose: 'Widening and 6-lane expressway to improve connectivity between Delhi and Mumbai',
+     estimatedCost: 12500,
+     totalLandRequired: 280,
+     numberOfParcels: 12,
+     landType: 'Agricultural',
+     affectedFamilies: 420,
+     proposalNumber: '',
+     priority: 'High',
+     description: 'Expansion of existing 4-lane expressway to 6 lanes for enhanced traffic capacity',
+     targetCompletion: '2027-12-31',
+     displacedFamilies: 350,
+   })
 
   const [documents, setDocuments] = useState([])
   const [drawnPolygons, setDrawnPolygons] = useState([])
@@ -107,11 +111,25 @@ const CreateProposal = () => {
         displacedFamilies: formData.displacedFamilies,
         priority: formData.priority,
         description: formData.description,
-        targetCompletion: formData.targetCompletion,
+        targetCompletion: formData.targetCompletion ? new Date(formData.targetCompletion).toISOString() : null,
         parcels,
       }
 
       const _res = await proposalApi.create(payload)
+
+      if (documents && documents.length > 0) {
+        for (const doc of documents) {
+          const formData = new FormData()
+          formData.append('file', doc)
+          formData.append('name', doc.name)
+          formData.append('fileName', doc.name)
+          formData.append('fileType', doc.type || 'application/pdf')
+          formData.append('fileSize', String(doc.size))
+          formData.append('storagePath', '')
+          await documentApi.upload(_res.data.id, formData)
+        }
+      }
+
       toast.success({ title: 'Proposal saved', message: 'Your draft has been saved successfully.' })
       setSubmitted(true)
     } catch (err) {
@@ -158,12 +176,26 @@ const CreateProposal = () => {
         displacedFamilies: formData.displacedFamilies,
         priority: formData.priority,
         description: formData.description,
-        targetCompletion: formData.targetCompletion,
+        targetCompletion: formData.targetCompletion ? new Date(formData.targetCompletion).toISOString() : null,
         parcels,
       }
 
       const res = await proposalApi.create(payload)
       setCreatedProposalId(res.data.id)
+
+      if (documents && documents.length > 0) {
+        for (const doc of documents) {
+          const formData = new FormData()
+          formData.append('file', doc)
+          formData.append('name', doc.name)
+          formData.append('fileName', doc.name)
+          formData.append('fileType', doc.type || 'application/pdf')
+          formData.append('fileSize', String(doc.size))
+          formData.append('storagePath', '')
+          await documentApi.upload(res.data.id, formData)
+        }
+      }
+
       await proposalApi.submit(res.data.id)
       toast.success({ title: 'Proposal submitted', message: 'Your proposal has been submitted successfully.' })
       setSubmitted(true)

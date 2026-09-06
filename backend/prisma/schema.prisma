@@ -18,6 +18,7 @@ enum Role {
 enum ProposalStatus {
   DRAFT
   SUBMITTED
+  FIELD_VERIFICATION
   UNDER_REVIEW
   APPROVED
   REJECTED
@@ -80,7 +81,8 @@ model User {
   createdProposals Proposal[] @relation("CreatedProposals")
   updatedProposals Proposal[] @relation("UpdatedProposals")
   approvals     Approval[]
-  documents     Document[]
+  uploadedDocuments Document[] @relation("UploadedDocuments")
+  verifiedDocuments Document[] @relation("VerifiedDocuments")
   notifications Notification[]
   auditLogs     AuditLog[]
   families      AffectedFamily[]
@@ -201,11 +203,15 @@ model Document {
   version            String             @default("1.0")
   uploadedById       String
   verificationStatus DocumentStatus     @default(PENDING)
+  verifiedById       String?
+  verifiedAt         DateTime?
+  verificationRemarks String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
   proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+  uploadedBy User     @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  verifiedBy User?    @relation("VerifiedDocuments", fields: [verifiedById], references: [id])
 
   @@map("documents")
 }
