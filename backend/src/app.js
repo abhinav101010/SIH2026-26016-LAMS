@@ -29,6 +29,7 @@ if (config.nodeEnv === 'production') {
   })
 }
 
+app.use('/api/public', require('./routes/public'))
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/users', require('./routes/users'))
 app.use('/api/roles', require('./routes/roles'))

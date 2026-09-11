@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Map,
@@ -11,7 +11,7 @@ import {
   Users as UsersIcon,
   RefreshCw,
 } from 'lucide-react'
-import { MapContainer, TileLayer, Marker, Popup, Polygon, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -41,6 +41,18 @@ const projectIcon = new L.Icon({
   iconAnchor: [12, 41],
   popupAnchor: [0, -40],
 })
+
+const MapController = ({ mapRef }) => {
+  const map = useMap()
+  useEffect(() => {
+    mapRef.current = map
+    const timer = setTimeout(() => {
+      map.invalidateSize()
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [map, mapRef])
+  return null
+}
 
 const statusColors = {
   proposed: '#F59E0B',
@@ -78,6 +90,7 @@ const Dashboard = () => {
   const [recentProposals, setRecentProposals] = useState([])
   const [parcels, setParcels] = useState([])
   const [mapProjects, setMapProjects] = useState([])
+  const mapRef = useRef(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -238,6 +251,7 @@ const Dashboard = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
+                  <MapController mapRef={mapRef} />
 
                   {mapProjects.slice(0, 20).map((proj) => (
                     <Marker key={proj.id} position={[proj.center?.[1] || 20, proj.center?.[0] || 77]} icon={projectIcon}>

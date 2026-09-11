@@ -47,7 +47,6 @@ const ROLE_DESCRIPTIONS = {
   PROPOSAL_OFFICER: 'Can create and manage land acquisition proposals',
   REVIEWING_AUTHORITY: 'Can review and approve or reject proposals',
   FIELD_OFFICER: 'Can update field verification and land parcel data',
-  VIEWER: 'Read-only access to proposals, documents, and GIS',
 }
 
 const seedPermissions = async () => {
@@ -103,13 +102,6 @@ const seedRolePermissions = async () => {
       'NOTIFICATIONS_VIEW',
       'AUDIT_VIEW',
       'MANAGE_POSSESSION',
-    ],
-    VIEWER: [
-      'DASHBOARD_VIEW',
-      'PROPOSALS_VIEW',
-      'GIS_VIEW',
-      'DOCUMENTS_VIEW',
-      'NOTIFICATIONS_VIEW',
     ],
   }
 

@@ -229,7 +229,7 @@ const Login = () => {
             Demo: admin@nlams.gov.in / admin123
           </p>
           <p className="text-center text-xs text-foreground-tertiary mt-2">
-            Also: proposal@gmail.com, authority@gmail.com, fieldoff@gmail.com, viewer@gmail.com
+            Also: proposal@gmail.com, authority@gmail.com, fieldoff@gmail.com
           </p>
         </motion.div>
       </div>

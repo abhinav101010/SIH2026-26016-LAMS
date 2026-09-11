@@ -12,7 +12,6 @@ enum Role {
   PROPOSAL_OFFICER
   REVIEWING_AUTHORITY
   FIELD_OFFICER
-  VIEWER
 }
 
 enum ProposalStatus {
@@ -66,7 +65,7 @@ model User {
   name          String
   email         String    @unique
   password      String
-  role          String    @default("VIEWER")
+  role          String    @default("PROPOSAL_OFFICER")
   departmentId  String?
   department    String?
   phone         String?
@@ -126,7 +125,13 @@ model Proposal {
   totalLandRequired Float
   numberOfParcels   Int
   landType          String
-  affectedFamilies  Int
+  affectedFamilies  Int?
+  affectedArea      String?
+  affectedAreaType  String?
+  affectedAreaKm2   Float?
+  estimatedPopulation Int?
+  populationDensity  Float?
+  populationDataSource String?
   displacedFamilies Int?
   status            ProposalStatus    @default(DRAFT)
   priority          String?

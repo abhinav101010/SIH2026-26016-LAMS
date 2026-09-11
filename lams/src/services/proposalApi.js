@@ -33,4 +33,7 @@ export const proposalApi = {
 
   startFieldVerification: (id) =>
     api.post(`/proposals/${id}/start-field-verification`).then((r) => r.data),
+
+  calculateAffectedPopulation: (data) =>
+    api.post('/proposals/affected-population', data).then((r) => r.data),
 }

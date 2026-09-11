@@ -90,7 +90,7 @@ async function main() {
         name: 'Sneha Gupta',
         email: 'viewer@gmail.com',
         password: hashedPassword,
-        role: 'VIEWER',
+        role: 'PROPOSAL_OFFICER',
         department: 'Ministry of Road Transport & Highways',
         departmentId: deptMap['Ministry of Road Transport & Highways'],
         phone: '+91-98765-43214',
@@ -191,7 +191,6 @@ async function main() {
       { name: 'PROPOSAL_OFFICER', description: 'Can create and manage land acquisition proposals', isSystemRole: true },
       { name: 'REVIEWING_AUTHORITY', description: 'Can review and approve or reject proposals', isSystemRole: true },
       { name: 'FIELD_OFFICER', description: 'Can update field verification and land parcel data', isSystemRole: true },
-      { name: 'VIEWER', description: 'Read-only access to proposals, documents, and GIS', isSystemRole: true },
     ],
     skipDuplicates: true,
   })
@@ -244,7 +243,6 @@ async function main() {
   const permissionMap = Object.fromEntries(seededPermissions.map(p => [p.name, p.id]))
 
   const rolePermissions = [
-    { role: 'VIEWER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','PROPOSALS_VIEW','DOCUMENTS_VIEW','NOTIFICATIONS_VIEW'] },
     { role: 'FIELD_OFFICER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','PROPOSALS_VIEW','UPDATE_PARCELS','DOCUMENTS_VIEW','DOCUMENTS_UPLOAD','NOTIFICATIONS_VIEW','AUDIT_VIEW','MANAGE_POSSESSION'] },
     { role: 'PROPOSAL_OFFICER', permissions: ['GIS_VIEW','DASHBOARD_VIEW','DASHBOARD_STATS','PROPOSALS_VIEW','PROPOSALS_CREATE','PROPOSALS_EDIT','PROPOSALS_SUBMIT','PROPOSALS_DELETE','DOCUMENTS_VIEW','DOCUMENTS_UPLOAD','NOTIFICATIONS_VIEW','SETTINGS_VIEW','AUDIT_VIEW'] },
     { role: 'REVIEWING_AUTHORITY', permissions: ['GIS_VIEW','DASHBOARD_VIEW','DASHBOARD_STATS','PROPOSALS_VIEW','PROPOSALS_APPROVE','PROPOSALS_REJECT','DOCUMENTS_VIEW','DOCUMENTS_VERIFY','NOTIFICATIONS_VIEW','SETTINGS_VIEW','AUDIT_VIEW'] },

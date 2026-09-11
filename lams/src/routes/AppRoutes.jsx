@@ -1,12 +1,9 @@
-import { useContext } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import RequireAuth from '../auth/RequireAuth'
 import ProtectedRoute from '../auth/ProtectedRoute'
-import PermissionGate from '../auth/PermissionGate'
 import AppShell from '../components/layout/AppShell'
 import LoadingSpinner from '../components/common/LoadingSpinner'
-import { AuthContext } from '../auth/AuthContext'
 
 const Login = lazy(() => import('../pages/Login'))
 const Dashboard = lazy(() => import('../pages/Dashboard'))
@@ -21,24 +18,15 @@ const Users = lazy(() => import('../pages/Users'))
 const Departments = lazy(() => import('../pages/Departments'))
 const AuditLogs = lazy(() => import('../pages/AuditLogs'))
 const NotFound = lazy(() => import('../pages/NotFound'))
-
-function NavigateToDefault() {
-  const { isAuthenticated } = useContext(AuthContext)
-  const location = useLocation()
-  const from = location.state?.from?.pathname || '/dashboard'
-
-  return isAuthenticated ? (
-    <Navigate to={from} replace />
-  ) : (
-    <Navigate to="/login" replace />
-  )
-}
+const PublicProposals = lazy(() => import('../pages/PublicProposals'))
+const PublicProposalDetail = lazy(() => import('../pages/PublicProposalDetail'))
 
 const AppRoutes = () => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        <Route path="/" element={<NavigateToDefault />} />
+        <Route path="/" element={<PublicProposals />} />
+        <Route path="/explore/:id" element={<PublicProposalDetail />} />
         <Route path="/login" element={<Login />} />
 
         <Route

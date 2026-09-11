@@ -53,7 +53,6 @@ National Land Acquisition & Management System — Backend API
 | officer@nlams.gov.in | admin123 | PROPOSAL_OFFICER |
 | reviewer@nlams.gov.in | admin123 | REVIEWING_AUTHORITY |
 | field@nlams.gov.in | admin123 | FIELD_OFFICER |
-| viewer@nlams.gov.in | admin123 | VIEWER |
 
 ## API Endpoints
 

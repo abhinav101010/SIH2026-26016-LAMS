@@ -41,7 +41,6 @@ const ROLE_LABELS = {
   PROPOSAL_OFFICER: 'Proposal Officer',
   REVIEWING_AUTHORITY: 'Reviewing Authority',
   FIELD_OFFICER: 'Field Officer',
-  VIEWER: 'Viewer',
 }
 
 const ROLE_COLORS = {
@@ -49,7 +48,6 @@ const ROLE_COLORS = {
   PROPOSAL_OFFICER: 'primary',
   REVIEWING_AUTHORITY: 'info',
   FIELD_OFFICER: 'success',
-  VIEWER: 'secondary',
 }
 
 const STATUS_LABELS = {
@@ -116,7 +114,7 @@ const ALL_PERMISSIONS = [
 function UserModal({ isOpen, onClose, user, roles, departments, onSave }) {
   const toast = useToast()
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', departmentId: '', department: '', employeeId: '', role: 'VIEWER', password: '',
+    name: '', email: '', phone: '', departmentId: '', department: '', employeeId: '', role: 'PROPOSAL_OFFICER', password: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -125,10 +123,10 @@ function UserModal({ isOpen, onClose, user, roles, departments, onSave }) {
       setForm({
         name: user.name || '', email: user.email || '', phone: user.phone || '',
         departmentId: user.departmentId || '', department: user.department || '',
-        employeeId: user.employeeId || '', role: user.role || 'VIEWER', password: '',
+        employeeId: user.employeeId || '', role: user.role || 'PROPOSAL_OFFICER', password: '',
       })
     } else {
-      setForm({ name: '', email: '', phone: '', departmentId: '', department: '', employeeId: '', role: 'VIEWER', password: '' })
+      setForm({ name: '', email: '', phone: '', departmentId: '', department: '', employeeId: '', role: 'PROPOSAL_OFFICER', password: '' })
     }
   }, [user, isOpen])
 

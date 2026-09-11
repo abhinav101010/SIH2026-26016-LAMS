@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useParams } from 'react-router-dom'
-import { MapContainer, TileLayer, Polygon, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, Polygon, Tooltip, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   ChevronLeft,
@@ -464,8 +464,11 @@ const ProposalDetails = () => {
             <h3 className="font-semibold text-foreground">Affected Families</h3>
           </div>
           <div className="space-y-3">
-            <DetailItem label="Affected Families" value={proposal.affectedFamilies?.toLocaleString('en-IN')} />
-            <DetailItem label="Displaced Families" value={(Math.round(proposal.affectedFamilies * 0.85)).toLocaleString('en-IN')} />
+            <DetailItem label="Affected Families" value={proposal.affectedFamilies?.toLocaleString('en-IN') || (proposal.estimatedPopulation ? `≈ ${(proposal.estimatedPopulation / 4.2).toFixed(0).toLocaleString('en-IN')}` : '—')} />
+            <DetailItem label="Estimated Population" value={proposal.estimatedPopulation ? `≈ ${proposal.estimatedPopulation.toLocaleString('en-IN')}` : '—'} />
+            <DetailItem label="Population Density" value={proposal.populationDensity ? `${proposal.populationDensity.toLocaleString('en-IN')} people/km²` : '—'} />
+            <DetailItem label="Affected Area" value={proposal.affectedArea ? (() => { try { const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea; if (area.type === 'Polygon' || area.type === 'Circle') return `${(area.area || 0).toFixed(2)} ha`; return 'Defined' } catch { return 'Defined' } })() : '—'} />
+            <DetailItem label="Displaced Families" value={(Math.round(proposal.affectedFamilies * 0.85) || 0).toLocaleString('en-IN')} />
             <DetailItem label="R&R Status" value={progressPercent >= 75 ? 'Completed' : 'In Progress'} />
             <DetailItem label="Compensation Status" value={progressPercent >= 60 ? 'Partial' : 'Pending'} />
           </div>
@@ -714,8 +717,69 @@ const ProposalDetails = () => {
                   return null
                 }
               })}
+              {proposal?.affectedArea && (() => {
+                try {
+                  const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea
+                  if (area.type === 'Polygon' && area.coordinates) {
+                    const positions = area.coordinates
+                    return (
+                      <Polygon
+                        positions={positions}
+                        pathOptions={{
+                          color: '#6366F1',
+                          fillColor: '#6366F1',
+                          fillOpacity: 0.2,
+                          weight: 2,
+                          dashArray: '5, 5',
+                        }}
+                      >
+                        <Tooltip sticky direction="top">
+                          <div className="text-xs">
+                            <p className="font-medium">Affected Area</p>
+                            <p>Type: Polygon</p>
+                            <p>Area: {area.area?.toFixed(2) || 0} ha</p>
+                          </div>
+                        </Tooltip>
+                      </Polygon>
+                    )
+                  }
+                  if (area.type === 'Circle' && area.center) {
+                    return (
+                      <Marker position={[area.center.lat, area.center.lng]}>
+                        <Popup>
+                          <div className="text-xs">
+                            <p className="font-medium">Affected Area</p>
+                            <p>Type: Circle</p>
+                            <p>Radius: {Math.round(area.radius || 0)} m</p>
+                             <p>Area: {(area.area || 0).toFixed(2)} ha</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )
+                  }
+                  return null
+                } catch {
+                  return null
+                }
+              })()}
             </MapContainer>
           </div>
+
+          {proposal?.affectedArea && (
+            <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-xl text-xs text-text-secondary">
+              <strong className="text-foreground">Affected Area: </strong>
+              {(() => {
+                try {
+                  const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea
+                  if (area.type === 'Polygon') return `${area.area?.toFixed(2) || 0} ha`
+                   if (area.type === 'Circle') return `${(area.area || 0).toFixed(2)} ha (Radius: ${Math.round(area.radius || 0)} m)`
+                  return 'Defined'
+                } catch {
+                  return 'Defined'
+                }
+              })()}
+            </div>
+          )}
 
           {/* Parcel Legend */}
           <div className="flex flex-wrap gap-4 text-xs">
