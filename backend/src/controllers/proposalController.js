@@ -1,5 +1,5 @@
 const prisma = require('../config/db')
-const { proposalSchema, approvalSchema, paginationSchema } = require('../validators')
+const { proposalSchema, proposalUpdateSchema, approvalSchema, paginationSchema } = require('../validators')
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/response')
 const { createAuditLog } = require('./auditController')
 
@@ -126,27 +126,38 @@ const createProposal = async (req, res) => {
       }
     }
 
+    const allowedFields = [
+      'proposalNumber','projectName','projectType','department','ministry','state','district',
+      'purpose','estimatedCost','totalLandRequired','numberOfParcels','landType',
+      'affectedFamilies','affectedArea','affectedAreaType','affectedAreaKm2','estimatedPopulation',
+      'populationDensity','populationDataSource','displacedFamilies','priority','description'
+    ]
+    const proposalFields = {}
+    for (const key of allowedFields) {
+      if (data[key] !== undefined) proposalFields[key] = data[key]
+    }
+    proposalFields.targetCompletion = data.targetCompletion ? new Date(data.targetCompletion).toISOString() : undefined
+
+    const normalizedParcels = (data.parcels || [])
+      .filter((p) => p.geometry || p.area)
+      .map((p) => ({
+        parcelNumber: p.parcelNumber || `PARC-${String(Math.random()).slice(2, 8)}`,
+        area: typeof p.area === 'number' ? p.area : 0,
+        landType: p.landType || data.landType,
+        status: p.status || 'pending',
+        surveyNo: p.surveyNo || null,
+        village: p.village || null,
+        owner: p.owner || null,
+        geometry: p.geometry || null,
+      }))
+
     const createData = {
-      ...data,
+      ...proposalFields,
       proposalNumber,
       createdById: req.user.id,
       submittedBy: req.user.name,
       departmentId: req.user.departmentId,
-      targetCompletion: data.targetCompletion ? new Date(data.targetCompletion).toISOString() : undefined,
-      parcels: data.parcels
-        ? {
-            create: data.parcels.map((p) => ({
-              parcelNumber: p.parcelNumber,
-              area: p.area || 0,
-              landType: p.landType || data.landType,
-              status: p.status || 'pending',
-              surveyNo: p.surveyNo,
-              village: p.village,
-              owner: p.owner,
-              geometry: p.geometry,
-            })),
-          }
-        : undefined,
+      ...(normalizedParcels.length > 0 ? { parcels: { create: normalizedParcels } } : {}),
     }
 
     const proposal = await prisma.proposal.create({
@@ -174,7 +185,7 @@ const createProposal = async (req, res) => {
 const updateProposal = async (req, res) => {
   try {
     const { id } = req.params
-    const data = proposalSchema.partial().parse(req.body)
+    const data = proposalUpdateSchema.parse(req.body)
 
     const existing = await prisma.proposal.findUnique({ where: { id } })
     if (!existing) {
@@ -191,9 +202,34 @@ const updateProposal = async (req, res) => {
 
     const { status: _status, parcels: _parcels, ...rest } = data
 
+    const allowedUpdateFields = [
+      'projectName','projectType','department','ministry','state','district',
+      'purpose','estimatedCost','totalLandRequired','numberOfParcels','landType',
+      'affectedFamilies','affectedArea','affectedAreaType','affectedAreaKm2','estimatedPopulation',
+      'populationDensity','populationDataSource','displacedFamilies','priority','description'
+    ]
+    const updateFields = {}
+    for (const key of allowedUpdateFields) {
+      if (rest[key] !== undefined) updateFields[key] = rest[key]
+    }
+
+    const normalizedParcels = (_parcels || [])
+      .filter((p) => p.geometry || p.area)
+      .map((p) => ({
+        parcelNumber: p.parcelNumber || `PARC-${String(Math.random()).slice(2, 8)}`,
+        area: typeof p.area === 'number' ? p.area : 0,
+        landType: p.landType || updateFields.landType || existing.landType,
+        status: p.status || 'pending',
+        surveyNo: p.surveyNo || null,
+        village: p.village || null,
+        owner: p.owner || null,
+        geometry: p.geometry || null,
+      }))
+
     const updateData = {
-      ...rest,
+      ...updateFields,
       updatedById: req.user.id,
+      ...(normalizedParcels.length > 0 ? { parcels: { deleteMany: {}, create: normalizedParcels } } : {}),
     }
 
     if (updateData.targetCompletion) {
@@ -202,24 +238,7 @@ const updateProposal = async (req, res) => {
 
     const proposal = await prisma.proposal.update({
       where: { id },
-      data: {
-        ...updateData,
-        parcels: _parcels
-          ? {
-              deleteMany: {},
-              create: _parcels.map((p, idx) => ({
-                parcelNumber: p.parcelNumber || `PARC-${String(idx + 1).padStart(3, '0')}`,
-                area: p.area || 0,
-                landType: p.landType || rest.landType || existing.landType,
-                status: p.status || 'pending',
-                surveyNo: p.surveyNo,
-                village: p.village,
-                owner: p.owner,
-                geometry: p.geometry,
-              })),
-            }
-          : undefined,
-      },
+      data: updateData,
       include: {
         parcels: true,
         createdBy: { select: { name: true, email: true } },

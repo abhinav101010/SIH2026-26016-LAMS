@@ -107,6 +107,7 @@ const AffectedAreaMap = ({ affectedArea, onAreaChange }) => {
           center: { lat: cLat, lng: cLng },
           radius,
           area,
+          geometry: JSON.stringify({ type: 'Point', coordinates: [cLng, cLat] }),
         })
         setDrawingMode(null)
         setCircleCenter(null)

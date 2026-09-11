@@ -56,9 +56,8 @@ const CreateProposal = () => {
       proposalNumber: '',
       priority: 'High',
       description: 'Expansion of existing 4-lane expressway to 6 lanes for enhanced traffic capacity',
-      targetCompletion: '2027-12-31',
-      displacedFamilies: 350,
-      affectedArea: null,
+       targetCompletion: '2027-12-31',
+       affectedArea: null,
       affectedAreaType: null,
       affectedAreaKm2: null,
       estimatedPopulation: null,
@@ -148,8 +147,7 @@ const CreateProposal = () => {
         estimatedPopulation: formData.estimatedPopulation,
         populationDensity: formData.populationDensity,
         populationDataSource: formData.populationDataSource,
-        affectedFamilies: populationData?.affectedFamilies || formData.displacedFamilies,
-        displacedFamilies: formData.displacedFamilies,
+        affectedFamilies: populationData?.affectedFamilies,
         priority: formData.priority,
         description: formData.description,
         targetCompletion: formData.targetCompletion ? new Date(formData.targetCompletion).toISOString() : null,
@@ -237,8 +235,7 @@ const CreateProposal = () => {
         estimatedPopulation: formData.estimatedPopulation,
         populationDensity: formData.populationDensity,
         populationDataSource: formData.populationDataSource,
-        affectedFamilies: populationData?.affectedFamilies || formData.displacedFamilies,
-        displacedFamilies: formData.displacedFamilies,
+        affectedFamilies: populationData?.affectedFamilies,
         priority: formData.priority,
         description: formData.description,
         targetCompletion: formData.targetCompletion ? new Date(formData.targetCompletion).toISOString() : null,
@@ -582,7 +579,9 @@ const DocumentsStep = ({ documents, onDocumentsChange, onNext, onBack }) => {
 }
 
 // Step 4: Review & Submit
-const ReviewStep = ({ formData, documents, drawnPolygons, affectedArea, populationData, onSubmit, onSaveDraft, isSubmitting, onBack }) => {
+const ReviewStep = ({ formData, documents, _drawnPolygons, affectedArea, populationData, onSubmit, onSaveDraft, isSubmitting, onBack }) => {
+  const parcelCount = affectedArea ? 1 : 0
+  const drawnAreaHa = affectedArea?.area || 0
   const sections = [
     {
       title: 'Project Details',
@@ -605,8 +604,8 @@ const ReviewStep = ({ formData, documents, drawnPolygons, affectedArea, populati
         { label: 'Total Land Required', value: formData.totalLandRequired + ' ha' },
         { label: 'Number of Parcels', value: formData.numberOfParcels },
         { label: 'Land Type', value: formData.landType },
-        { label: 'Parcels Mapped', value: drawnPolygons.length > 0 ? drawnPolygons.length : (affectedArea ? 1 : 0) },
-        { label: 'Land Area Drawn', value: (drawnPolygons.length > 0 ? drawnPolygons.reduce((sum, p) => sum + (p.area || 0), 0) : (affectedArea?.area || 0)).toFixed(2) + ' ha' },
+        { label: 'Parcels Mapped', value: parcelCount },
+        { label: 'Land Area Drawn', value: drawnAreaHa.toFixed(2) + ' ha' },
         { label: 'Affected Area Type', value: affectedArea?.type === 'Polygon' ? 'Polygon' : affectedArea?.type === 'Circle' ? 'Circle' : 'Not defined' },
         { label: 'Affected Area', value: affectedArea
             ? `${(affectedArea.area || 0).toFixed(2)} ha`
@@ -675,11 +674,11 @@ const ReviewStep = ({ formData, documents, drawnPolygons, affectedArea, populati
               <h4 className="font-medium text-foreground">GIS Location</h4>
             </div>
             <p className="text-sm text-text-secondary mb-3">
-              {drawnPolygons.length} parcel{drawnPolygons.length !== 1 ? 's' : ''} mapped
+              {parcelCount} parcel{parcelCount !== 1 ? 's' : ''} mapped
             </p>
-            {drawnPolygons.length > 0 && (
+            {parcelCount > 0 && (
               <div className="text-xs text-text-secondary">
-                Total area: {drawnPolygons.reduce((sum, p) => sum + (p.area || 0), 0)} ha
+                Total area: {drawnAreaHa.toFixed(2)} ha
               </div>
             )}
           </div>

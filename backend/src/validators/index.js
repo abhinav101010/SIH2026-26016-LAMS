@@ -22,7 +22,18 @@ const updateProfileSchema = z.object({
   employeeId: z.string().optional(),
 })
 
-const proposalSchema = z.object({
+const parcelItemSchema = z.object({
+  parcelNumber: z.string().optional(),
+  area: z.number().positive().optional(),
+  landType: z.string().optional(),
+  status: z.string().optional(),
+  surveyNo: z.string().optional(),
+  village: z.string().optional(),
+  owner: z.string().optional(),
+  geometry: z.string().optional(),
+})
+
+const proposalBaseFields = {
   proposalNumber: z.string().optional(),
   projectName: z.string().min(1, 'Project name is required'),
   projectType: z.string().min(1, 'Project type is required'),
@@ -35,23 +46,34 @@ const proposalSchema = z.object({
   totalLandRequired: z.number().positive('Total land required must be positive'),
   numberOfParcels: z.number().int().positive('Number of parcels must be positive'),
   landType: z.string().min(1, 'Land type is required'),
-  affectedFamilies: z.number().int().nonnegative().optional(),
-  affectedArea: z.string().min(1, 'Affected area is required'),
-  displacedFamilies: z.number().int().nonnegative().optional(),
+  affectedFamilies: z.number().int().nonnegative().nullable().optional(),
+  affectedArea: z.string().nullable().optional(),
+  affectedAreaType: z.string().nullable().optional(),
+  affectedAreaKm2: z.number().positive().nullable().optional(),
+  estimatedPopulation: z.number().int().nonnegative().nullable().optional(),
+  populationDensity: z.number().positive().nullable().optional(),
+  populationDataSource: z.string().nullable().optional(),
+  displacedFamilies: z.number().int().nonnegative().nullable().optional(),
   priority: z.string().optional(),
   description: z.string().optional(),
   targetCompletion: z.string().optional(),
-  parcels: z.array(z.object({
-    parcelNumber: z.string().optional(),
-    area: z.number().positive().optional(),
-    landType: z.string().optional(),
-    status: z.string().optional(),
-    surveyNo: z.string().optional(),
-    village: z.string().optional(),
-    owner: z.string().optional(),
-    geometry: z.string().optional(),
-  })).optional(),
-})
+}
+
+const proposalSchema = z.object({
+  ...proposalBaseFields,
+  parcels: z.array(parcelItemSchema).optional(),
+}).refine(
+  (data) => {
+    const parcels = data.parcels || []
+    return parcels.some((p) => p.geometry && p.geometry.trim().length > 0)
+  },
+  { message: 'Please draw at least one land parcel on the map before submitting.', path: ['parcels'] }
+)
+
+const proposalUpdateSchema = z.object({
+  ...proposalBaseFields,
+  parcels: z.array(parcelItemSchema).optional(),
+}).partial()
 
 const approvalSchema = z.object({
   action: z.enum(['APPROVED', 'REJECTED', 'CHANGES_REQUESTED']).optional(),
@@ -130,6 +152,7 @@ module.exports = {
   createRoleSchema,
   updateRoleSchema,
   proposalSchema,
+  proposalUpdateSchema,
   approvalSchema,
   documentSchema,
   paginationSchema,
