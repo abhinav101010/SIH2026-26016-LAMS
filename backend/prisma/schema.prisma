@@ -30,6 +30,7 @@ enum ProposalStatus {
 }
 
 enum ApprovalAction {
+  PENDING
   APPROVED
   REJECTED
   CHANGES_REQUESTED
@@ -126,7 +127,7 @@ model Proposal {
   numberOfParcels   Int
   landType          String
   affectedFamilies  Int?
-  affectedArea      String?
+  affectedArea       String?  @db.Text
   affectedAreaType  String?
   affectedAreaKm2   Float?
   estimatedPopulation Int?
@@ -138,6 +139,8 @@ model Proposal {
   description       String?
   currentStage      String?
   progress          Int               @default(0)
+  approvalRound     Int               @default(1)
+  approvingDepartments Json?
   submittedBy       String?
   submittedDate     DateTime?
   targetCompletion  DateTime?
@@ -184,16 +187,21 @@ model LandParcel {
 }
 
 model Approval {
-  id         String         @id @default(uuid())
-  proposalId String
-  reviewerId String
-  action     ApprovalAction
-  remarks    String?
-  createdAt  DateTime       @default(now())
+  id          String         @id @default(uuid())
+  proposalId  String
+  departmentId String
+  round       Int            @default(1)
+  reviewerId  String
+  action      ApprovalAction @default(PENDING)
+  remarks     String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
-  proposal  Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  reviewer  User     @relation(fields: [reviewerId], references: [id])
+  proposal    Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  department  Department     @relation(fields: [departmentId], references: [id])
+  reviewer    User           @relation(fields: [reviewerId], references: [id])
 
+  @@unique([proposalId, departmentId, round])
   @@map("approvals")
 }
 
@@ -320,6 +328,7 @@ model Department {
 
   users       User[]     @relation("UserDepartment")
   proposals   Proposal[] @relation("ProposalDepartment")
+  approvals   Approval[]
   auditLogs   AuditLog[]
 
   @@map("departments")

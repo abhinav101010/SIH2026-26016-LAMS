@@ -31,6 +31,7 @@ import {
 
 import ClayCard from '../components/ui/ClayCard'
 import ClayButton from '../components/ui/ClayButton'
+import StatusBadge from '../components/ui/StatusBadge'
 import Timeline from '../components/common/Timeline'
 import Modal from '../components/ui/Modal'
 
@@ -267,29 +268,40 @@ const ProposalDetails = () => {
     if (proposal.status === 'FIELD_VERIFICATION') return 'field_verification'
     return TIMELINE_STAGES.find((s) => s.label === currentPhase)?.id || 'approved'
   })()
-  const progressPercent = proposal.progress || 0
-  const acquiredArea = Math.round(proposal.totalLandRequired * (progressPercent / 100))
-  const remainingArea = proposal.totalLandRequired - acquiredArea
+  const approvalProgress = proposal.approvalProgress || 0
+  const approvalCount = proposal.approvals?.length || 0
+  const approvedCount = proposal.approvals?.filter((a) => a.action === 'APPROVED').length || 0
+  const rejectedCount = proposal.approvals?.filter((a) => a.action === 'REJECTED').length || 0
+  const pendingCount = proposal.approvals?.filter((a) => a.action === 'PENDING').length || 0
 
   const statusConfig = {
-    approved: { label: 'APPROVED', className: 'bg-status-approved/10 text-status-approved' },
-    pending: { label: 'PENDING', className: 'bg-status-pending/10 text-status-pending' },
-    review: { label: 'UNDER REVIEW', className: 'bg-status-review/10 text-status-review' },
-    rejected: { label: 'REJECTED', className: 'bg-status-rejected/10 text-status-rejected' },
-    acquired: { label: 'ACQUIRED', className: 'bg-status-approved/10 text-status-approved' },
-    possession: { label: 'POSSESSION', className: 'bg-status-approved/10 text-status-approved' },
+    DRAFT: { label: 'DRAFT', className: 'bg-status-pending/10 text-status-pending' },
+    SUBMITTED: { label: 'SUBMITTED', className: 'bg-status-review/10 text-status-review' },
+    UNDER_REVIEW: { label: 'UNDER REVIEW', className: 'bg-status-review/10 text-status-review' },
+    FIELD_VERIFICATION: { label: 'FIELD VERIFICATION', className: 'bg-status-review/10 text-status-review' },
+    APPROVED: { label: 'APPROVED', className: 'bg-status-approved/10 text-status-approved' },
+    REJECTED: { label: 'REJECTED', className: 'bg-status-rejected/10 text-status-rejected' },
+    CHANGES_REQUESTED: { label: 'CHANGES REQUESTED', className: 'bg-status-pending/10 text-status-pending' },
+    NOTIFICATION_ISSUED: { label: 'NOTIFICATION ISSUED', className: 'bg-status-approved/10 text-status-approved' },
+    AWARD_DECLARED: { label: 'AWARD DECLARED', className: 'bg-status-approved/10 text-status-approved' },
+    COMPENSATION: { label: 'COMPENSATION', className: 'bg-status-approved/10 text-status-approved' },
+    ACQUIRED: { label: 'ACQUIRED', className: 'bg-status-approved/10 text-status-approved' },
+    POSSESSION: { label: 'POSSESSION', className: 'bg-status-approved/10 text-status-approved' },
   }
+  const currentStatus = proposal ? (statusConfig[proposal.status] || { label: proposal.status || 'PENDING', className: 'bg-status-pending/10 text-status-pending' }) : { label: 'LOADING', className: 'bg-status-pending/10 text-status-pending' }
 
-  const currentStatus = statusConfig[proposal.status?.toLowerCase()] || statusConfig.pending
-  const canApprove = proposal.status === 'UNDER_REVIEW' && user?.role === 'REVIEWING_AUTHORITY'
-  const canReject = proposal.status === 'UNDER_REVIEW' && hasPermission('PROPOSALS_REJECT')
-  const canRequestChanges = proposal.status === 'UNDER_REVIEW' && hasPermission('PROPOSALS_EDIT')
-  const canEdit = proposal.status === 'DRAFT' && hasPermission('PROPOSALS_EDIT')
-  const canDelete = (proposal.status === 'DRAFT' || user?.role === 'SUPER_ADMIN') && hasPermission('PROPOSALS_DELETE')
+  const userDepartmentApproval = proposal?.approvals?.find(
+    (a) => a.department?.id === user?.departmentId && a.round === proposal?.approvalRound
+  )
+  const canApprove = proposal?.status === 'UNDER_REVIEW' && user?.role === 'REVIEWING_AUTHORITY' && userDepartmentApproval?.action === 'PENDING'
+  const canReject = proposal?.status === 'UNDER_REVIEW' && hasPermission('PROPOSALS_REJECT') && userDepartmentApproval?.action === 'PENDING'
+  const canRequestChanges = proposal?.status === 'UNDER_REVIEW' && hasPermission('PROPOSALS_EDIT')
+  const canEdit = proposal?.status === 'DRAFT' && hasPermission('PROPOSALS_EDIT')
+  const canDelete = ((proposal?.status === 'DRAFT' || proposal?.status === 'REJECTED') && proposal?.createdBy?.id === user?.id) || (user?.role === 'SUPER_ADMIN' && hasPermission('PROPOSALS_DELETE'))
   const isFieldOfficer = user?.role === 'FIELD_OFFICER'
   const canVerifyDocuments = isFieldOfficer && hasPermission('DOCUMENTS_VERIFY')
-  const canCompleteVerification = isFieldOfficer && proposal.status === 'FIELD_VERIFICATION'
-  const canStartFieldVerification = isFieldOfficer && proposal.status === 'SUBMITTED'
+  const canCompleteVerification = isFieldOfficer && proposal?.status === 'FIELD_VERIFICATION'
+  const canStartFieldVerification = isFieldOfficer && proposal?.status === 'SUBMITTED'
 
   return (
     <motion.div
@@ -328,7 +340,7 @@ const ProposalDetails = () => {
               )}
               {canDelete && (
                 <ClayButton variant="danger" size="sm" icon={Trash2} onClick={() => setShowDeleteModal(true)}>
-                  Delete
+                  {proposal?.status === 'REJECTED' ? 'Drop Proposal' : 'Delete'}
                 </ClayButton>
               )}
             </>
@@ -372,14 +384,20 @@ const ProposalDetails = () => {
         <ClayCard className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Acquisition Progress</h2>
+              <h2 className="text-xl font-semibold text-foreground">
+                {proposal.status === 'REJECTED' ? 'Approval Status' : 'Department Approval Progress'}
+              </h2>
               <p className="text-sm text-foreground-secondary mt-1">
-                Current stage: {proposal.currentStage || '—'}
+                {proposal.status === 'REJECTED'
+                  ? `Rejected by ${rejectedCount} of ${approvalCount} departments`
+                  : `${approvedCount} of ${approvalCount} departments approved`}
               </p>
             </div>
             <div className="text-right">
-              <span className="text-3xl font-bold text-foreground">{progressPercent}%</span>
-              <p className="text-xs text-foreground-tertiary">Complete</p>
+              <span className="text-3xl font-bold text-foreground">{approvalProgress}%</span>
+              <p className="text-xs text-foreground-tertiary">
+                {proposal.status === 'REJECTED' ? 'Rejected' : 'Complete'}
+              </p>
             </div>
           </div>
 
@@ -387,8 +405,10 @@ const ProposalDetails = () => {
             <div
               className="h-full rounded-full transition-all duration-700 ease-out"
               style={{
-                width: progressPercent + '%',
-                background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
+                width: approvalProgress + '%',
+                background: proposal.status === 'REJECTED'
+                  ? 'linear-gradient(90deg, #EF4444 0%, #DC2626 100%)'
+                  : 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
               }}
             />
           </div>
@@ -399,6 +419,51 @@ const ProposalDetails = () => {
           </div>
         </ClayCard>
       </motion.div>
+
+      {/* Department Approvals */}
+      {(user?.role === 'REVIEWING_AUTHORITY' || user?.role === 'PROPOSAL_OFFICER' || user?.role === 'SUPER_ADMIN') && (
+        <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
+          <ClayCard className="p-6">
+            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Users size={20} className="text-primary" />
+              Department Approvals
+            </h2>
+            <div className="space-y-3">
+              {proposal.approvals?.map((approval) => (
+                <div key={approval.id} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      approval.action === 'APPROVED' ? 'bg-status-approved/10 text-status-approved' :
+                      approval.action === 'REJECTED' ? 'bg-status-rejected/10 text-status-rejected' :
+                      'bg-status-pending/10 text-status-pending'
+                    }`}>
+                      {approval.action === 'APPROVED' ? <Check size={16} /> :
+                       approval.action === 'REJECTED' ? <X size={16} /> :
+                       <Clock size={16} />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{approval.department?.name || 'Unknown Department'}</p>
+                      <p className="text-xs text-foreground-secondary">
+                        {approval.action === 'APPROVED' && `Approved by ${approval.reviewer?.name || 'Unknown'} on ${formatDate(approval.updatedAt)}`}
+                        {approval.action === 'REJECTED' && `Rejected by ${approval.reviewer?.name || 'Unknown'} on ${formatDate(approval.updatedAt)}`}
+                        {approval.action === 'PENDING' && 'Pending review'}
+                        {approval.action === 'CHANGES_REQUESTED' && `Changes requested by ${approval.reviewer?.name || 'Unknown'}`}
+                      </p>
+                      {approval.remarks && (
+                        <p className="text-xs text-foreground-secondary mt-1 italic">"{approval.remarks}"</p>
+                      )}
+                    </div>
+                  </div>
+                  <StatusBadge status={(approval.action || 'pending').toLowerCase()} size="sm" />
+                </div>
+              ))}
+              {(!proposal.approvals || proposal.approvals.length === 0) && (
+                <p className="text-sm text-foreground-secondary text-center py-4">No department approvals yet</p>
+              )}
+            </div>
+          </ClayCard>
+        </motion.div>
+      )}
 
       {/* Timeline */}
       <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
@@ -450,8 +515,8 @@ const ProposalDetails = () => {
             <DetailItem label="Total Area" value={formatArea(proposal.totalLandRequired)} />
             <DetailItem label="Parcels" value={parcels.length.toString()} />
             <DetailItem label="Land Type" value={proposal.landType} />
-            <DetailItem label="Acquired Area" value={formatArea(acquiredArea)} />
-            <DetailItem label="Remaining Area" value={formatArea(remainingArea)} />
+            <DetailItem label="Approval Progress" value={`${approvalProgress}%`} />
+            <DetailItem label="Approvals" value={`${approvedCount} / ${approvalCount} approved`} />
           </div>
         </ClayCard>
 
@@ -469,8 +534,8 @@ const ProposalDetails = () => {
             <DetailItem label="Population Density" value={proposal.populationDensity ? `${proposal.populationDensity.toLocaleString('en-IN')} people/km²` : '—'} />
             <DetailItem label="Affected Area" value={proposal.affectedArea ? (() => { try { const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea; if (area.type === 'Polygon' || area.type === 'Circle') return `${(area.area || 0).toFixed(2)} ha`; return 'Defined' } catch { return 'Defined' } })() : '—'} />
             <DetailItem label="Displaced Families" value={(Math.round(proposal.affectedFamilies * 0.85) || 0).toLocaleString('en-IN')} />
-            <DetailItem label="R&R Status" value={progressPercent >= 75 ? 'Completed' : 'In Progress'} />
-            <DetailItem label="Compensation Status" value={progressPercent >= 60 ? 'Partial' : 'Pending'} />
+            <DetailItem label="Approval Status" value={proposal.status === 'APPROVED' ? 'Completed' : proposal.status === 'REJECTED' ? 'Rejected' : 'In Progress'} />
+            <DetailItem label="Departments Approved" value={`${approvedCount} of ${approvalCount}`} />
           </div>
         </ClayCard>
       </motion.div>

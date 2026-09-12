@@ -10,6 +10,7 @@ import {
   Send,
   FileImage,
   MapPin,
+  Users,
 } from 'lucide-react'
 
 import ClayCard from '../components/ui/ClayCard'
@@ -71,6 +72,8 @@ const EditProposal = () => {
   const [drawnPolygons, setDrawnPolygons] = useState([])
   const [affectedArea, setAffectedArea] = useState(null)
   const [populationData, setPopulationData] = useState(null)
+  const [approvingDepartments, setApprovingDepartments] = useState([])
+  const [departments, setDepartments] = useState([])
 
   useEffect(() => {
     const fetchProposal = async () => {
@@ -138,6 +141,9 @@ const EditProposal = () => {
           })
           setDrawnPolygons(polygons)
         }
+        if (p.approvingDepartments && Array.isArray(p.approvingDepartments)) {
+          setApprovingDepartments(p.approvingDepartments)
+        }
       } catch (err) {
         toast.error({ title: 'Failed to load proposal', message: err.response?.data?.message || 'Something went wrong' })
         navigate('/proposals')
@@ -145,7 +151,21 @@ const EditProposal = () => {
         setLoading(false)
       }
     }
-    if (id) fetchProposal()
+
+    const fetchDepartments = async () => {
+      try {
+        const { departmentApi } = await import('../services')
+        const res = await departmentApi.getDepartments()
+        setDepartments(res.data || [])
+      } catch (err) {
+        console.error('Failed to fetch departments:', err)
+      }
+    }
+
+    if (id) {
+      fetchProposal()
+      fetchDepartments()
+    }
   }, [id])
 
   const handleInputChange = (field, value) => {
@@ -227,6 +247,7 @@ const EditProposal = () => {
         priority: formData.priority,
         description: formData.description,
         targetCompletion: formData.targetCompletion,
+        approvingDepartments,
       }
 
       if (parcels.length > 0) {
@@ -317,6 +338,7 @@ const EditProposal = () => {
         priority: formData.priority,
         description: formData.description,
         targetCompletion: formData.targetCompletion,
+        approvingDepartments,
       }
 
       if (parcels.length > 0) {
@@ -458,7 +480,7 @@ const ProjectDetailsStep = ({ formData, onChange, onNext }) => {
   const departmentOptions = DEPARTMENTS.map((d) => ({ value: d, label: d }))
   const projectTypeOptions = PROJECT_TYPES.map((t) => ({ value: t, label: t }))
 
-  const isComplete = formData.projectName && formData.projectType && formData.department && formData.state && formData.district && formData.purpose && formData.estimatedCost
+  const isComplete = formData.projectName && formData.projectType && formData.department && formData.state && formData.district && formData.purpose && formData.estimatedCost && approvingDepartments.length > 0
 
   return (
     <div className="space-y-6">
@@ -504,6 +526,39 @@ const ProjectDetailsStep = ({ formData, onChange, onNext }) => {
             options={departmentOptions}
             required
           />
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-foreground mb-2">Approving Departments <span className="text-error-500">*</span></label>
+            <div className="border border-border rounded-xl p-3 bg-surface max-h-48 overflow-y-auto">
+              {departments.length === 0 ? (
+                <p className="text-xs text-foreground-secondary">Loading departments...</p>
+              ) : (
+                <div className="space-y-2">
+                  {departments.map((dept) => (
+                    <label key={dept.id} className="flex items-center gap-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/40 p-2 rounded-lg transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={approvingDepartments.includes(dept.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setApprovingDepartments([...approvingDepartments, dept.id])
+                          } else {
+                            setApprovingDepartments(approvingDepartments.filter((id) => id !== dept.id))
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{dept.name}</p>
+                        <p className="text-xs text-foreground-secondary">{dept.code}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-foreground-secondary mt-1">Select at least one department that must approve this proposal</p>
+          </div>
 
           <ClaySelect
             label="State"
@@ -737,6 +792,26 @@ const ReviewStep = ({ formData, documents, drawnPolygons, affectedArea, populati
               </div>
             )}
           </div>
+
+          {/* Approving Departments */}
+          {approvingDepartments.length > 0 && (
+            <div className="border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Users size={16} className="text-primary" />
+                <h4 className="font-medium text-foreground">Approving Departments</h4>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {approvingDepartments.map((deptId) => {
+                  const dept = departments.find((d) => d.id === deptId)
+                  return (
+                    <span key={deptId} className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-lg border border-primary/20">
+                      {dept?.name || deptId}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </ClayCard>
 

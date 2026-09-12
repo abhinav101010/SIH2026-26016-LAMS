@@ -24,6 +24,9 @@ const getOverview = async (req, res) => {
       pendingProposals,
       compensationDisbursed,
       affectedFamilies,
+      pendingDepartmentApprovals,
+      approvedDepartmentApprovals,
+      rejectedDepartmentApprovals,
     ] = await Promise.all([
       prisma.project.count({ where: projectScope }),
       prisma.proposal.count({ where: proposalScope }),
@@ -41,6 +44,9 @@ const getOverview = async (req, res) => {
         },
       }),
       prisma.proposal.aggregate({ _sum: { affectedFamilies: true }, where: proposalScope }),
+      prisma.approval.count({ where: { action: 'PENDING' } }),
+      prisma.approval.count({ where: { action: 'APPROVED' } }),
+      prisma.approval.count({ where: { action: 'REJECTED' } }),
     ])
 
     return successResponse(res, {
@@ -51,6 +57,9 @@ const getOverview = async (req, res) => {
       pendingProposals,
       compensationDisbursed: compensationDisbursed._sum.paidAmount || 0,
       affectedFamilies: affectedFamilies._sum.affectedFamilies || 0,
+      pendingDepartmentApprovals,
+      approvedDepartmentApprovals,
+      rejectedDepartmentApprovals,
     })
   } catch (error) {
     return errorResponse(res, 'Failed to fetch dashboard overview', 500)

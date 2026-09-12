@@ -9,7 +9,7 @@ const { errorHandler, notFound } = require('./middleware/errorHandler')
 const app = express()
 
 app.use(helmet())
-app.use(cors({ origin: config.frontendUrl, credentials: true }))
+app.use(cors({ origin: config.frontendUrl, credentials: true, allowedHeaders: ['Authorization', 'Content-Type', 'Accept', 'Origin', 'X-Requested-With'] }))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(morgan('dev'))

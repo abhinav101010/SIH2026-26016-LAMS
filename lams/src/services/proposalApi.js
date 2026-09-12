@@ -28,6 +28,9 @@ export const proposalApi = {
   requestChanges: (id, remarks) =>
     api.post(`/proposals/${id}/request-changes`, { remarks }).then((r) => r.data),
 
+  drop: (id) =>
+    api.post(`/proposals/${id}/drop`).then((r) => r.data),
+
   completeVerification: (id) =>
     api.post(`/proposals/${id}/complete-verification`).then((r) => r.data),
 

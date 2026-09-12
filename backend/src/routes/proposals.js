@@ -13,6 +13,7 @@ const {
   approveProposal,
   rejectProposal,
   requestChanges,
+  dropProposal,
 } = require('../controllers/proposalController')
 const { getAffectedPopulation } = require('../controllers/populationController')
 const { authenticate, requirePermission } = require('../middleware/auth')
@@ -29,6 +30,7 @@ router.post('/:id/complete-verification', authenticate, requirePermission('DOCUM
 router.post('/:id/approve', authenticate, requirePermission('PROPOSALS_APPROVE'), approveProposal)
 router.post('/:id/reject', authenticate, requirePermission('PROPOSALS_REJECT'), rejectProposal)
 router.post('/:id/request-changes', authenticate, requirePermission('PROPOSALS_EDIT'), requestChanges)
+router.post('/:id/drop', authenticate, requirePermission('PROPOSALS_DELETE'), dropProposal)
 router.post('/affected-population', authenticate, getAffectedPopulation)
 
 module.exports = router

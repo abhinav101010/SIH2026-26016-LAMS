@@ -15,6 +15,50 @@ const ALLOWED_TRANSITIONS = {
   ACQUIRED: ['POSSESSION'],
 }
 
+const calculateProposalStatus = async (proposalId, round) => {
+  const approvals = await prisma.approval.findMany({
+    where: { proposalId, round },
+    select: { action: true },
+  })
+
+  if (approvals.some((a) => a.action === 'REJECTED')) {
+    return 'REJECTED'
+  }
+  if (approvals.length > 0 && approvals.every((a) => a.action === 'APPROVED')) {
+    return 'APPROVED'
+  }
+  return 'UNDER_REVIEW'
+}
+
+const calculateApprovalProgress = async (proposalId, round) => {
+  const approvals = await prisma.approval.findMany({
+    where: { proposalId, round },
+    select: { action: true },
+  })
+
+  if (approvals.length === 0) return 0
+  const approved = approvals.filter((a) => a.action === 'APPROVED').length
+  return Math.round((approved / approvals.length) * 100)
+}
+
+const ensureApprovalRecord = async (tx, proposalId, departmentId, round, reviewerId) => {
+  const existing = await tx.approval.findFirst({
+    where: { proposalId, departmentId, round },
+  })
+  if (!existing) {
+    await tx.approval.create({
+      data: {
+        proposalId,
+        departmentId,
+        round,
+        reviewerId,
+        action: 'PENDING',
+      },
+    })
+  }
+  return existing
+}
+
 const getAllProposals = async (req, res) => {
   try {
     const { page, limit } = paginationSchema.parse(req.query)
@@ -74,7 +118,10 @@ const getProposalById = async (req, res) => {
       include: {
         createdBy: { select: { name: true, email: true } },
         parcels: true,
-        approvals: { include: { reviewer: { select: { name: true, email: true } } } },
+        approvals: {
+          include: { reviewer: { select: { name: true, email: true } }, department: { select: { id: true, name: true, code: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
         documents: {
           include: {
             uploadedBy: { select: { name: true, email: true } },
@@ -130,7 +177,8 @@ const createProposal = async (req, res) => {
       'proposalNumber','projectName','projectType','department','ministry','state','district',
       'purpose','estimatedCost','totalLandRequired','numberOfParcels','landType',
       'affectedFamilies','affectedArea','affectedAreaType','affectedAreaKm2','estimatedPopulation',
-      'populationDensity','populationDataSource','displacedFamilies','priority','description'
+      'populationDensity','populationDataSource','displacedFamilies','priority','description',
+      'approvingDepartments'
     ]
     const proposalFields = {}
     for (const key of allowedFields) {
@@ -196,8 +244,8 @@ const updateProposal = async (req, res) => {
       return errorResponse(res, 'Access denied', 403)
     }
 
-    if (existing.status !== 'DRAFT' && existing.status !== 'CHANGES_REQUESTED') {
-      return errorResponse(res, 'Only draft or change-requested proposals can be modified', 409)
+    if (existing.status !== 'DRAFT' && existing.status !== 'CHANGES_REQUESTED' && existing.status !== 'REJECTED') {
+      return errorResponse(res, 'Only draft, change-requested, or rejected proposals can be modified', 409)
     }
 
     const { status: _status, parcels: _parcels, ...rest } = data
@@ -206,7 +254,8 @@ const updateProposal = async (req, res) => {
       'projectName','projectType','department','ministry','state','district',
       'purpose','estimatedCost','totalLandRequired','numberOfParcels','landType',
       'affectedFamilies','affectedArea','affectedAreaType','affectedAreaKm2','estimatedPopulation',
-      'populationDensity','populationDataSource','displacedFamilies','priority','description'
+      'populationDensity','populationDataSource','displacedFamilies','priority','description',
+      'approvingDepartments'
     ]
     const updateFields = {}
     for (const key of allowedUpdateFields) {
@@ -280,13 +329,16 @@ const deleteProposal = async (req, res) => {
       return errorResponse(res, 'Access denied', 403)
     }
 
-    if (existing.status !== 'DRAFT') {
-      if (req.user.role !== 'SUPER_ADMIN') {
-        return errorResponse(res, 'Only draft proposals can be deleted', 409)
-      }
-      if (req.query.confirm !== 'true') {
-        return errorResponse(res, 'Deleting a non-draft proposal requires confirmation. Append ?confirm=true to proceed.', 409)
-      }
+    const isDraft = existing.status === 'DRAFT'
+    const isRejected = existing.status === 'REJECTED'
+    const canDelete = isDraft || isRejected || req.user.role === 'SUPER_ADMIN'
+
+    if (!canDelete) {
+      return errorResponse(res, 'Only draft or rejected proposals can be deleted', 409)
+    }
+
+    if (!isDraft && req.user.role === 'SUPER_ADMIN' && req.query.confirm !== 'true') {
+      return errorResponse(res, 'Deleting a non-draft proposal requires confirmation. Append ?confirm=true to proceed.', 409)
     }
 
     await prisma.$transaction(async (tx) => {
@@ -311,8 +363,12 @@ const deleteProposal = async (req, res) => {
 const submitProposal = async (req, res) => {
   try {
     const { id } = req.params
+    const { approvingDepartments } = req.body
 
-    const proposal = await prisma.proposal.findUnique({ where: { id } })
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      include: { approvals: true },
+    })
     if (!proposal) {
       return errorResponse(res, 'Proposal not found', 404)
     }
@@ -321,9 +377,26 @@ const submitProposal = async (req, res) => {
       return errorResponse(res, 'Access denied', 403)
     }
 
-    if (proposal.status !== 'DRAFT' && proposal.status !== 'CHANGES_REQUESTED') {
-      return errorResponse(res, 'Proposal can only be submitted from DRAFT or CHANGES_REQUESTED status', 400)
+    if (proposal.status !== 'DRAFT' && proposal.status !== 'CHANGES_REQUESTED' && proposal.status !== 'REJECTED') {
+      return errorResponse(res, 'Proposal can only be submitted from DRAFT, CHANGES_REQUESTED, or REJECTED status', 400)
     }
+
+    const departmentIds = approvingDepartments || proposal.approvingDepartments
+    if (!departmentIds || departmentIds.length === 0) {
+      return errorResponse(res, 'At least one approving department is required', 400)
+    }
+
+    const uniqueIds = [...new Set(departmentIds)]
+    const departments = await prisma.department.findMany({
+      where: { id: { in: uniqueIds }, isActive: true },
+      select: { id: true },
+    })
+    if (departments.length !== uniqueIds.length) {
+      return errorResponse(res, 'One or more selected departments are invalid or inactive', 400)
+    }
+
+    const nextRound = proposal.approvalRound + 1
+    const status = await calculateProposalStatus(id, proposal.approvalRound)
 
     const updated = await prisma.proposal.update({
       where: { id },
@@ -331,8 +404,44 @@ const submitProposal = async (req, res) => {
         status: 'SUBMITTED',
         submittedDate: new Date(),
         updatedById: req.user.id,
+        approvingDepartments: uniqueIds,
+        approvalRound: nextRound,
       },
     })
+
+    await prisma.approval.createMany({
+      data: uniqueIds.map((deptId) => ({
+        proposalId: id,
+        departmentId: deptId,
+        round: nextRound,
+        reviewerId: req.user.id,
+        action: 'PENDING',
+      })),
+    })
+
+    const reviewers = await prisma.user.findMany({
+      where: {
+        departmentId: { in: uniqueIds },
+        role: 'REVIEWING_AUTHORITY',
+        isActive: true,
+      },
+      select: { id: true, departmentId: true },
+    })
+
+    const notifications = reviewers.map((reviewer) => ({
+      userId: reviewer.id,
+      title: 'New Proposal for Review',
+      message: `Proposal ${proposal.proposalNumber} has been submitted and requires your department's approval`,
+      type: 'approval',
+      category: 'Proposal updates',
+      priority: 'high',
+      action: 'Review now',
+      link: `/proposals/${id}`,
+    }))
+
+    if (notifications.length > 0) {
+      await prisma.notification.createMany({ data: notifications })
+    }
 
     await createAuditLog(req.user.id, 'Proposal', id, 'SUBMITTED', proposal, updated, null, proposal.departmentId)
 
@@ -481,12 +590,37 @@ const approveProposal = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwnerDepartment = proposal.departmentId === req.user.departmentId
+      const isApprovingDepartment = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwnerDepartment && !isApprovingDepartment) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (req.user.role !== 'REVIEWING_AUTHORITY') {
       return errorResponse(res, 'Only Reviewing Authority can approve proposals', 403)
+    }
+
+    if (!req.user.departmentId) {
+      return errorResponse(res, 'User department is not assigned', 403)
+    }
+
+    const currentRound = proposal.approvalRound || 1
+    const approval = await prisma.approval.findFirst({
+      where: {
+        proposalId: id,
+        departmentId: req.user.departmentId,
+        round: currentRound,
+      },
+    })
+
+    if (!approval) {
+      return errorResponse(res, 'No approval record found for your department on this proposal', 403)
+    }
+
+    if (approval.action !== 'PENDING') {
+      return errorResponse(res, 'This department has already acted on this proposal', 400)
     }
 
     if (proposal.status !== 'UNDER_REVIEW') {
@@ -499,42 +633,52 @@ const approveProposal = async (req, res) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      const updatedApproval = await tx.approval.update({
+        where: { id: approval.id },
+        data: {
+          action: 'APPROVED',
+          reviewerId: req.user.id,
+          remarks: remarks || '',
+        },
+        include: {
+          reviewer: { select: { name: true, email: true } },
+          department: { select: { id: true, name: true, code: true } },
+        },
+      })
+
+      const newStatus = await calculateProposalStatus(id, currentRound)
+      const newProgress = await calculateApprovalProgress(id, currentRound)
+
       const updated = await tx.proposal.update({
         where: { id },
         data: {
-          status: 'APPROVED',
+          status: newStatus,
+          progress: newProgress,
           updatedById: req.user.id,
         },
       })
 
-      await tx.approval.create({
-        data: {
-          proposalId: id,
-          reviewerId: req.user.id,
-          action: 'APPROVED',
-          remarks: remarks || '',
-        },
-      })
-
-      if (proposal.createdById) {
+      if (newStatus === 'APPROVED' && proposal.createdById) {
         await tx.notification.create({
           data: {
             userId: proposal.createdById,
-            title: 'Proposal Approved',
-            message: `Proposal ${proposal.proposalNumber} has been approved`,
+            title: 'Proposal Fully Approved',
+            message: `Proposal ${proposal.proposalNumber} has been approved by all departments`,
             type: 'approval',
             category: 'Proposal updates',
             priority: 'high',
+            action: 'View proposal',
+            link: `/proposals/${id}`,
           },
         })
       }
 
-      return updated
+      return { proposal: updated, approval: updatedApproval }
     })
 
-    await createAuditLog(req.user.id, 'Proposal', id, 'PROPOSAL_APPROVED', proposal, result, null, proposal.departmentId)
+    await createAuditLog(req.user.id, 'Proposal', id, 'PROPOSAL_DEPARTMENT_APPROVED', proposal, result.proposal, null, proposal.departmentId)
 
-    return successResponse(res, result)
+    return successResponse(res, result.proposal)
   } catch (error) {
     return errorResponse(res, 'Failed to approve proposal', 500)
   }
@@ -546,7 +690,7 @@ const rejectProposal = async (req, res) => {
     const { remarks } = approvalSchema.parse(req.body)
 
     if (!remarks || remarks.trim().length === 0) {
-      return errorResponse(res, 'Rejection reason is required', 400)
+      return errorResponse(res, 'Rejection feedback is required', 400)
     }
 
     const proposal = await prisma.proposal.findUnique({ where: { id } })
@@ -554,8 +698,37 @@ const rejectProposal = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwnerDepartment = proposal.departmentId === req.user.departmentId
+      const isApprovingDepartment = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwnerDepartment && !isApprovingDepartment) {
+        return errorResponse(res, 'Access denied', 403)
+      }
+    }
+
+    if (req.user.role !== 'REVIEWING_AUTHORITY') {
+      return errorResponse(res, 'Only Reviewing Authority can reject proposals', 403)
+    }
+
+    if (!req.user.departmentId) {
+      return errorResponse(res, 'User department is not assigned', 403)
+    }
+
+    const currentRound = proposal.approvalRound || 1
+    const approval = await prisma.approval.findFirst({
+      where: {
+        proposalId: id,
+        departmentId: req.user.departmentId,
+        round: currentRound,
+      },
+    })
+
+    if (!approval) {
+      return errorResponse(res, 'No approval record found for your department on this proposal', 403)
+    }
+
+    if (approval.action !== 'PENDING') {
+      return errorResponse(res, 'This department has already acted on this proposal', 400)
     }
 
     if (proposal.status !== 'UNDER_REVIEW') {
@@ -563,20 +736,25 @@ const rejectProposal = async (req, res) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      const updatedApproval = await tx.approval.update({
+        where: { id: approval.id },
+        data: {
+          action: 'REJECTED',
+          reviewerId: req.user.id,
+          remarks,
+        },
+        include: {
+          reviewer: { select: { name: true, email: true } },
+          department: { select: { id: true, name: true, code: true } },
+        },
+      })
+
       const updated = await tx.proposal.update({
         where: { id },
         data: {
           status: 'REJECTED',
+          progress: 0,
           updatedById: req.user.id,
-        },
-      })
-
-      await tx.approval.create({
-        data: {
-          proposalId: id,
-          reviewerId: req.user.id,
-          action: 'REJECTED',
-          remarks,
         },
       })
 
@@ -585,20 +763,22 @@ const rejectProposal = async (req, res) => {
           data: {
             userId: proposal.createdById,
             title: 'Proposal Rejected',
-            message: `Proposal ${proposal.proposalNumber} has been rejected. Reason: ${remarks}`,
+            message: `Proposal ${proposal.proposalNumber} has been rejected by ${updatedApproval.department?.name || 'a department'}. Reason: ${remarks}`,
             type: 'status',
             category: 'Proposal updates',
             priority: 'high',
+            action: 'View proposal',
+            link: `/proposals/${id}`,
           },
         })
       }
 
-      return updated
+      return { proposal: updated, approval: updatedApproval }
     })
 
-    await createAuditLog(req.user.id, 'Proposal', id, 'REJECTED', proposal, result, null, proposal.departmentId)
+    await createAuditLog(req.user.id, 'Proposal', id, 'PROPOSAL_DEPARTMENT_REJECTED', proposal, result.proposal, null, proposal.departmentId)
 
-    return successResponse(res, result)
+    return successResponse(res, result.proposal)
   } catch (error) {
     return errorResponse(res, 'Failed to reject proposal', 500)
   }
@@ -668,6 +848,41 @@ const requestChanges = async (req, res) => {
   }
 }
 
+const dropProposal = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      include: { approvals: true },
+    })
+    if (!proposal) {
+      return errorResponse(res, 'Proposal not found', 404)
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
+      return errorResponse(res, 'Access denied', 403)
+    }
+
+    if (proposal.status !== 'REJECTED') {
+      return errorResponse(res, 'Only rejected proposals can be dropped', 400)
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.approval.deleteMany({ where: { proposalId: id } })
+      await tx.document.deleteMany({ where: { proposalId: id } })
+      await tx.landParcel.deleteMany({ where: { proposalId: id } })
+      await tx.proposal.delete({ where: { id } })
+    })
+
+    await createAuditLog(req.user.id, 'Proposal', id, 'PROPOSAL_DROPPED', proposal, null, null, proposal.departmentId)
+
+    return successResponse(res, { message: 'Proposal dropped successfully' })
+  } catch (error) {
+    return errorResponse(res, 'Failed to drop proposal', 500)
+  }
+}
+
 module.exports = {
   getAllProposals,
   getProposalById,
@@ -681,4 +896,7 @@ module.exports = {
   approveProposal,
   rejectProposal,
   requestChanges,
+  dropProposal,
+  calculateProposalStatus,
+  calculateApprovalProgress,
 }

@@ -57,6 +57,7 @@ const proposalBaseFields = {
   priority: z.string().optional(),
   description: z.string().optional(),
   targetCompletion: z.string().optional(),
+  approvingDepartments: z.array(z.string().uuid()).min(1, 'At least one approving department is required').optional(),
 }
 
 const proposalSchema = z.object({
