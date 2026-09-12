@@ -31,12 +31,10 @@ const CustomTooltip = ({ active, payload }) => {
 
 const RADIAN = Math.PI * 2
 
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-  const cx2 = cx + 12
-  const cy2 = cy + 12
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5
-  const x = cx2 + radius * Math.cos(-midAngle * RADIAN)
-  const y = cy2 + (radius * 0.8) * Math.sin(-midAngle * RADIAN)
+const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent }) => {
+  const radius = outerRadius + 18
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
 
   return (
     <text
@@ -44,7 +42,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
       y={y}
       textAnchor="middle"
       dominantBaseline="middle"
-      className="text-xs font-medium fill-foreground"
+      className="text-[11px] font-medium fill-foreground"
     >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
@@ -59,18 +57,17 @@ const AcquisitionStatusChart = ({ data }) => {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <PieChart margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+      <PieChart margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
         <Tooltip content={<CustomTooltip />} />
         <Pie
           data={chartData}
           dataKey="count"
           nameKey="status"
-          innerRadius={80}
-          outerRadius={120}
+          outerRadius={90}
           cx="50%"
           cy="50%"
-          paddingAngle={2}
-          cornerRadius={6}
+          paddingAngle={3}
+          cornerRadius={5}
           label={renderCustomizedLabel}
           labelLine={false}
         >
@@ -79,12 +76,11 @@ const AcquisitionStatusChart = ({ data }) => {
           ))}
         </Pie>
         <Legend
-          layout="vertical"
-          verticalAlign="middle"
-          align="right"
+          layout="horizontal"
+          align="center"
+          verticalAlign="bottom"
           iconSize={10}
-          iconRadius={6}
-          layoutWidth="40%"
+          iconRadius={5}
           formatter={(value) => value}
         />
       </PieChart>

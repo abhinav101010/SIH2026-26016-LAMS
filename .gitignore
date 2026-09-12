@@ -28,3 +28,4 @@ lams/.env
 backend/.env
 backend/.env.example
 */uploads/
+/graphify-out

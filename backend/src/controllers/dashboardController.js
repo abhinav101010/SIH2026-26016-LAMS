@@ -220,7 +220,13 @@ const getTimelineAdherence = async (req, res) => {
       `
     }
 
-    return successResponse(res, result)
+    const normalized = (result || []).map((row) => ({
+      category: row.category,
+      count: Number(row.count),
+      percentage: Number(row.percentage),
+    }))
+
+    return successResponse(res, normalized)
   } catch (error) {
     return errorResponse(res, 'Failed to fetch timeline adherence', 500)
   }
