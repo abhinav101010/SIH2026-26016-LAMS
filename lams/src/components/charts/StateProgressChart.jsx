@@ -38,7 +38,9 @@ const StateProgressChart = ({ data }) => {
     acquired: d.acquired,
   }))
 
-  const maxValue = Math.max(...data.map((d) => d.proposed)) * 1.3
+  const maxValue = data.length > 0
+    ? Math.max(...data.map((d) => d.proposed)) * 1.3
+    : 100
 
   return (
     <ResponsiveContainer width="100%" height="100%">

@@ -29,7 +29,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 const AcquisitionProgressChart = ({ data }) => {
-  const maxValue = Math.max(...data.map((d) => d.acquired), ...data.map((d) => d.proposed)) * 1.2
+  const maxValue = data.length > 0
+    ? Math.max(...data.map((d) => d.acquired), ...data.map((d) => d.proposed)) * 1.2
+    : 100
 
   return (
     <ResponsiveContainer width="100%" height="100%">

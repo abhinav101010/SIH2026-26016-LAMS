@@ -5,7 +5,7 @@ National Land Acquisition & Management System — Backend API
 ## Tech Stack
 
 - Node.js + Express.js
-- PostgreSQL + PostGIS
+- MySQL
 - Prisma ORM
 - JWT Authentication
 - bcrypt
@@ -18,11 +18,10 @@ National Land Acquisition & Management System — Backend API
    npm install
    ```
 
-2. Setup PostgreSQL with PostGIS:
-   ```bash
-   createdb nlams_db
-   psql -d nlams_db -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-   ```
+2. Setup MySQL:
+    ```bash
+    mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS nlams_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    ```
 
 3. Configure environment:
    ```bash

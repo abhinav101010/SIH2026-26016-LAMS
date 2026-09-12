@@ -1,8 +1,21 @@
 const prisma = require('../config/db')
 const { successResponse, errorResponse } = require('../utils/response')
 
+const getProposalScope = (req) => {
+  if (req.user.role === 'SUPER_ADMIN') return {}
+  return { departmentId: req.user.departmentId }
+}
+
+const getProjectScope = (req) => {
+  if (req.user.role === 'SUPER_ADMIN') return {}
+  return { department: req.user.department }
+}
+
 const getOverview = async (req, res) => {
   try {
+    const proposalScope = getProposalScope(req)
+    const projectScope = getProjectScope(req)
+
     const [
       totalProjects,
       totalProposals,
@@ -12,19 +25,22 @@ const getOverview = async (req, res) => {
       compensationDisbursed,
       affectedFamilies,
     ] = await Promise.all([
-      prisma.project.count(),
-      prisma.proposal.count(),
-      prisma.proposal.aggregate({ _sum: { totalLandRequired: true } }),
+      prisma.project.count({ where: projectScope }),
+      prisma.proposal.count({ where: proposalScope }),
+      prisma.proposal.aggregate({ _sum: { totalLandRequired: true }, where: proposalScope }),
       prisma.proposal.aggregate({
         _sum: { totalLandRequired: true },
-        where: { status: { in: ['ACQUIRED', 'POSSESSION'] } },
+        where: { ...proposalScope, status: { in: ['ACQUIRED', 'POSSESSION'] } },
       }),
-      prisma.proposal.count({ where: { status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'PENDING'] } } }),
+      prisma.proposal.count({ where: { ...proposalScope, status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'FIELD_VERIFICATION'] } } }),
       prisma.compensation.aggregate({
         _sum: { paidAmount: true },
-        where: { status: { in: ['PAID', 'PARTIALLY_PAID'] } },
+        where: {
+          proposal: proposalScope,
+          status: { in: ['PAID', 'PARTIALLY_PAID'] },
+        },
       }),
-      prisma.proposal.aggregate({ _sum: { affectedFamilies: true } }),
+      prisma.proposal.aggregate({ _sum: { affectedFamilies: true }, where: proposalScope }),
     ])
 
     return successResponse(res, {
@@ -43,8 +59,10 @@ const getOverview = async (req, res) => {
 
 const getStatusDistribution = async (req, res) => {
   try {
+    const scope = getProposalScope(req)
     const statuses = await prisma.proposal.groupBy({
       by: ['status'],
+      where: scope,
       _count: { status: true },
       _sum: { estimatedCost: true },
     })
@@ -52,6 +70,7 @@ const getStatusDistribution = async (req, res) => {
     const colorMap = {
       DRAFT: 'pending',
       SUBMITTED: 'review',
+      FIELD_VERIFICATION: 'review',
       UNDER_REVIEW: 'review',
       APPROVED: 'approved',
       REJECTED: 'rejected',
@@ -59,8 +78,8 @@ const getStatusDistribution = async (req, res) => {
       NOTIFICATION_ISSUED: 'approved',
       AWARD_DECLARED: 'approved',
       COMPENSATION: 'approved',
-      ACQUIRED: 'possession',
-      POSSESSION: 'possession',
+      ACQUIRED: 'acquired',
+      POSSESSION: 'acquired',
     }
 
     const data = statuses.map((s) => ({
@@ -78,16 +97,33 @@ const getStatusDistribution = async (req, res) => {
 
 const getStateProgress = async (req, res) => {
   try {
-    const result = await prisma.$queryRaw`
-      SELECT 
-        state,
-        SUM(totalLandRequired) as proposed,
-        SUM(CASE WHEN status IN ('ACQUIRED', 'POSSESSION') THEN totalLandRequired ELSE 0 END) as acquired
-      FROM proposals
-      GROUP BY state
-      ORDER BY proposed DESC
-      LIMIT 10
-    `
+    const scope = getProposalScope(req)
+
+    let result
+    if (scope.departmentId) {
+      result = await prisma.$queryRaw`
+        SELECT 
+          state,
+          SUM(totalLandRequired) as proposed,
+          SUM(CASE WHEN status IN ('ACQUIRED', 'POSSESSION') THEN totalLandRequired ELSE 0 END) as acquired
+        FROM proposals
+        WHERE departmentId = ${scope.departmentId}
+        GROUP BY state
+        ORDER BY proposed DESC
+        LIMIT 10
+      `
+    } else {
+      result = await prisma.$queryRaw`
+        SELECT 
+          state,
+          SUM(totalLandRequired) as proposed,
+          SUM(CASE WHEN status IN ('ACQUIRED', 'POSSESSION') THEN totalLandRequired ELSE 0 END) as acquired
+        FROM proposals
+        GROUP BY state
+        ORDER BY proposed DESC
+        LIMIT 10
+      `
+    }
 
     return successResponse(res, result)
   } catch (error) {
@@ -97,17 +133,34 @@ const getStateProgress = async (req, res) => {
 
 const getAcquisitionTrends = async (req, res) => {
   try {
-    const result = await prisma.$queryRaw`
-      SELECT 
-        TO_CHAR(createdAt, 'Mon') as month,
-        EXTRACT(MONTH FROM createdAt) as month_num,
-        SUM(CASE WHEN status IN ('ACQUIRED', 'POSSESSION') THEN totalLandRequired ELSE 0 END) as acquired,
-        SUM(totalLandRequired) as proposed
-      FROM proposals
-      WHERE createdAt >= CURRENT_DATE - INTERVAL '12 months'
-      GROUP BY month, month_num
-      ORDER BY month_num
-    `
+    const scope = getProposalScope(req)
+
+    let result
+    if (scope.departmentId) {
+      result = await prisma.$queryRaw`
+        SELECT 
+          DATE_FORMAT(createdAt, '%b') as month,
+          MONTH(createdAt) as month_num,
+          SUM(CASE WHEN status IN ('ACQUIRED', 'POSSESSION') THEN totalLandRequired ELSE 0 END) as acquired,
+          SUM(totalLandRequired) as proposed
+        FROM proposals
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 12 MONTH) AND departmentId = ${scope.departmentId}
+        GROUP BY month, month_num
+        ORDER BY month_num
+      `
+    } else {
+      result = await prisma.$queryRaw`
+        SELECT 
+          DATE_FORMAT(createdAt, '%b') as month,
+          MONTH(createdAt) as month_num,
+          SUM(CASE WHEN status IN ('ACQUIRED', 'POSSESSION') THEN totalLandRequired ELSE 0 END) as acquired,
+          SUM(totalLandRequired) as proposed
+        FROM proposals
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        GROUP BY month, month_num
+        ORDER BY month_num
+      `
+    }
 
     return successResponse(res, result)
   } catch (error) {
@@ -117,23 +170,46 @@ const getAcquisitionTrends = async (req, res) => {
 
 const getTimelineAdherence = async (req, res) => {
   try {
-    const result = await prisma.$queryRaw`
-      SELECT 
-        CASE 
-          WHEN progress >= 75 THEN 'On Track'
-          WHEN progress >= 40 THEN 'At Risk'
-          ELSE 'Delayed'
-        END as category,
-        COUNT(*) as count,
-        ROUND(AVG(progress), 1) as percentage
-      FROM proposals
-      WHERE status NOT IN ('DRAFT', 'REJECTED')
-      GROUP BY CASE 
-          WHEN progress >= 75 THEN 'On Track'
-          WHEN progress >= 40 THEN 'At Risk'
-          ELSE 'Delayed'
-      END
-    `
+    const scope = getProposalScope(req)
+
+    let result
+    if (scope.departmentId) {
+      result = await prisma.$queryRaw`
+        SELECT 
+          CASE 
+            WHEN progress >= 75 THEN 'On Track'
+            WHEN progress >= 40 THEN 'At Risk'
+            ELSE 'Delayed'
+          END as category,
+          COUNT(*) as count,
+          ROUND(AVG(progress), 1) as percentage
+        FROM proposals
+        WHERE status NOT IN ('DRAFT', 'REJECTED') AND departmentId = ${scope.departmentId}
+        GROUP BY CASE 
+            WHEN progress >= 75 THEN 'On Track'
+            WHEN progress >= 40 THEN 'At Risk'
+            ELSE 'Delayed'
+          END
+      `
+    } else {
+      result = await prisma.$queryRaw`
+        SELECT 
+          CASE 
+            WHEN progress >= 75 THEN 'On Track'
+            WHEN progress >= 40 THEN 'At Risk'
+            ELSE 'Delayed'
+          END as category,
+          COUNT(*) as count,
+          ROUND(AVG(progress), 1) as percentage
+        FROM proposals
+        WHERE status NOT IN ('DRAFT', 'REJECTED')
+        GROUP BY CASE 
+            WHEN progress >= 75 THEN 'On Track'
+            WHEN progress >= 40 THEN 'At Risk'
+            ELSE 'Delayed'
+          END
+      `
+    }
 
     return successResponse(res, result)
   } catch (error) {
@@ -143,8 +219,10 @@ const getTimelineAdherence = async (req, res) => {
 
 const getRecentProposals = async (req, res) => {
   try {
+    const scope = getProposalScope(req)
     const proposals = await prisma.proposal.findMany({
       take: 8,
+      where: scope,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

@@ -115,7 +115,7 @@ const Dashboard = () => {
 
         setOverview(overviewRes.data)
         setStatusDistribution(statusRes.data)
-        setStateProgress(stateProgressRes.data)
+        setStateProgress(stateRes.data)
         setTrends(trendsRes.data)
         setTimeline(timelineRes.data)
         setRecentProposals(recentRes.data)
