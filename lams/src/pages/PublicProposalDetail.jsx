@@ -97,7 +97,7 @@ const PublicProposalDetail = () => {
             <ArrowLeft size={16} />
           </ClayButton>
           <div>
-            <h1 className="text-lg font-bold text-foreground">NLAMS</h1>
+            <h1 className="text-lg font-bold text-foreground">Bharat Bhoomi</h1>
             <p className="text-xs text-text-secondary">Public Proposal Explorer</p>
           </div>
         </div>

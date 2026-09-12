@@ -1,4 +1,4 @@
-/* === NLAMS Data Barrel Export === */
+/* === Bharat Bhoomi Data Barrel Export === */
 export * from './mockData'
 export * from './dashboard'
 export * from './proposals'

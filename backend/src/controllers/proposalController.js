@@ -218,7 +218,7 @@ const createProposal = async (req, res) => {
       const lastNum = lastProposal
         ? parseInt(lastProposal.proposalNumber.split('-').pop(), 10)
         : 110
-      proposalNumber = `NLAMS-2026-${String(lastNum + 1).padStart(5, '0')}`
+      proposalNumber = `Bharat Bhoomi-2026-${String(lastNum + 1).padStart(5, '0')}`
     } else {
       const existing = await prisma.proposal.findFirst({ where: { proposalNumber } })
       if (existing) {
@@ -229,7 +229,7 @@ const createProposal = async (req, res) => {
         const lastNum = lastProposal
           ? parseInt(lastProposal.proposalNumber.split('-').pop(), 10)
           : 110
-        proposalNumber = `NLAMS-2026-${String(lastNum + 1).padStart(5, '0')}`
+        proposalNumber = `Bharat Bhoomi-2026-${String(lastNum + 1).padStart(5, '0')}`
       }
     }
 

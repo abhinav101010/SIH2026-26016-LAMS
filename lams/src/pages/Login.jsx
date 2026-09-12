@@ -70,7 +70,7 @@ const Login = () => {
               Faster Infrastructure.
             </h1>
             <p className="text-blue-100 text-sm mb-10 leading-relaxed max-w-md">
-              National Land Acquisition & Management System — digitizing and monitoring the land
+              Bharat Bhoomi — digitizing and monitoring the land
               acquisition lifecycle across India with full transparency and accountability.
             </p>
 
@@ -129,7 +129,7 @@ const Login = () => {
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Shield size={24} className="text-primary" />
               </div>
-              <h2 className="text-2xl font-bold text-foreground">Welcome to NLAMS</h2>
+              <h2 className="text-2xl font-bold text-foreground">Welcome to Bharat Bhoomi</h2>
               <p className="text-sm text-foreground-secondary mt-1.5">
                 Sign in to access the land acquisition platform
               </p>
@@ -156,7 +156,7 @@ const Login = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@nlams.gov.in"
+                    placeholder="you@bharatbhoomi.gov.in"
                     required
                     className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-surface border border-border text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
@@ -226,7 +226,7 @@ const Login = () => {
 
           {/* Demo hint */}
           <p className="text-center text-xs text-foreground-tertiary mt-4">
-            Demo: admin@nlams.gov.in / admin123
+            Demo: admin@bharatbhoomi.gov.in / admin123
           </p>
           <p className="text-center text-xs text-foreground-tertiary mt-2">
             Also: proposal@gmail.com, authority@gmail.com, fieldoff@gmail.com

@@ -6,7 +6,7 @@ const { seedPermissions, seedRolePermissions } = require('./controllers/roleCont
 const server = app.listen(config.port, async () => {
   await seedPermissions()
   await seedRolePermissions()
-  console.log(`NLAMS Backend running on port ${config.port}`)
+  console.log(`Bharat Bhoomi Backend running on port ${config.port}`)
   console.log(`Environment: ${config.nodeEnv}`)
   console.log(`Frontend URL: ${config.frontendUrl}`)
 })

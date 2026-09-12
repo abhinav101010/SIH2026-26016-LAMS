@@ -455,7 +455,7 @@ function AuditSettings() {
               </div>
               <div>
                 <span className="text-text-secondary">2026-08-31 11:45</span>
-                <span className="text-foreground ml-2">Viewed proposal NLAMS-2026-00124</span>
+                <span className="text-foreground ml-2">Viewed proposal Bharat Bhoomi-2026-00124</span>
               </div>
               <div>
                 <span className="text-text-secondary">2026-08-31 09:15</span>

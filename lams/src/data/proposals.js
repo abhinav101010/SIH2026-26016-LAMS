@@ -1,10 +1,10 @@
 /* ============================================================
-   NLAMS Proposals Mock Data
+   Bharat Bhoomi Proposals Mock Data
    ============================================================ */
 
 export const PROPOSALS = [
   {
-    id: 'NLAMS-2026-00124',
+    id: 'Bharat Bhoomi-2026-00124',
     project: 'Delhi–Mumbai Expressway (Phase II)',
     department: 'NHAI',
     projectType: 'Highway',
@@ -24,7 +24,7 @@ export const PROPOSALS = [
     currentStage: 'Notification',
   },
   {
-    id: 'NLAMS-2026-00123',
+    id: 'Bharat Bhoomi-2026-00123',
     project: 'Mumbai-Ahmedabad High-Speed Rail Corridor',
     department: 'Indian Railways',
     projectType: 'Railway',
@@ -44,7 +44,7 @@ export const PROPOSALS = [
     currentStage: 'Award',
   },
   {
-    id: 'NLAMS-2026-00122',
+    id: 'Bharat Bhoomi-2026-00122',
     project: 'Chennai-Bengaluru Industrial Corridor',
     department: 'Ministry of Commerce',
     projectType: 'Industrial Sector',
@@ -64,7 +64,7 @@ export const PROPOSALS = [
     currentStage: 'Compensation',
   },
   {
-    id: 'NLAMS-2026-00121',
+    id: 'Bharat Bhoomi-2026-00121',
     project: 'Jaipur-Kota Transmission Line Upgrade',
     department: 'Power Grid Corporation',
     projectType: 'Power Line',
@@ -84,7 +84,7 @@ export const PROPOSALS = [
     currentStage: 'Administrative Review',
   },
   {
-    id: 'NLAMS-2026-00120',
+    id: 'Bharat Bhoomi-2026-00120',
     project: 'Hyderabad Metro Rail Phase III',
     department: 'Hyderabad Metro Rail',
     projectType: 'Urban Infrastructure',
@@ -104,7 +104,7 @@ export const PROPOSALS = [
     currentStage: 'Award',
   },
   {
-    id: 'NLAMS-2026-00119',
+    id: 'Bharat Bhoomi-2026-00119',
     project: 'Lucknow-Agra Expressway Maintenance',
     department: 'Uttar Pradesh PWD',
     projectType: 'Highway',
@@ -124,7 +124,7 @@ export const PROPOSALS = [
     currentStage: 'Document Verification',
   },
   {
-    id: 'NLAMS-2026-00118',
+    id: 'Bharat Bhoomi-2026-00118',
     project: 'Kochi Metro Rail Extension',
     department: 'KMRL',
     projectType: 'Urban Infrastructure',
@@ -144,7 +144,7 @@ export const PROPOSALS = [
     currentStage: 'Administrative Review',
   },
   {
-    id: 'NLAMS-2026-00117',
+    id: 'Bharat Bhoomi-2026-00117',
     project: 'Noida-Greater Noida Metro Line',
     department: 'NCRTC',
     projectType: 'Urban Infrastructure',
@@ -164,7 +164,7 @@ export const PROPOSALS = [
     currentStage: 'Award',
   },
   {
-    id: 'NLAMS-2026-00116',
+    id: 'Bharat Bhoomi-2026-00116',
     project: 'Bhubaneswar Smart City Drainage Project',
     department: 'Bhubaneswar Smart City',
     projectType: 'Urban Infrastructure',
@@ -184,7 +184,7 @@ export const PROPOSALS = [
     currentStage: 'Approved',
   },
   {
-    id: 'NLAMS-2026-00115',
+    id: 'Bharat Bhoomi-2026-00115',
     project: 'Amritsar-Kolkata Railway Doubling',
     department: 'Indian Railways',
     projectType: 'Railway',
@@ -204,7 +204,7 @@ export const PROPOSALS = [
     currentStage: 'Compensation',
   },
   {
-    id: 'NLAMS-2026-00114',
+    id: 'Bharat Bhoomi-2026-00114',
     project: 'Bangalore-Mysore Expressway Land Acquisition',
     department: 'Karnataka PWD',
     projectType: 'Highway',
@@ -224,7 +224,7 @@ export const PROPOSALS = [
     currentStage: 'Proposal Submitted',
   },
   {
-    id: 'NLAMS-2026-00113',
+    id: 'Bharat Bhoomi-2026-00113',
     project: 'Hyderabad-Warangal Gas Pipeline',
     department: 'GAIL',
     projectType: 'Pipeline',
@@ -244,7 +244,7 @@ export const PROPOSALS = [
     currentStage: 'Notification',
   },
   {
-    id: 'NLAMS-2026-00112',
+    id: 'Bharat Bhoomi-2026-00112',
     project: 'Patna Metro Rail Project',
     department: 'Patna Metro Rail',
     projectType: 'Urban Infrastructure',
@@ -264,7 +264,7 @@ export const PROPOSALS = [
     currentStage: 'Administrative Review',
   },
   {
-    id: 'NLAMS-2026-00111',
+    id: 'Bharat Bhoomi-2026-00111',
     project: 'Guwahati Airport Expansion',
     department: 'Airports Authority of India',
     projectType: 'Airport',
@@ -284,7 +284,7 @@ export const PROPOSALS = [
     currentStage: 'Award',
   },
   {
-    id: 'NLAMS-2026-00110',
+    id: 'Bharat Bhoomi-2026-00110',
     project: 'Ranchi-Dumka Railway Line',
     department: 'Indian Railways',
     projectType: 'Railway',
@@ -307,16 +307,16 @@ export const PROPOSALS = [
 
 // Additional proposals for filtering demonstration
 const ADDITIONAL_PROPOSALS = [
-  { id: 'NLAMS-2026-00109', project: 'Goa Coastal Road Project', department: 'Goa PWD', projectType: 'Highway', state: 'Goa', district: 'North Goa', area: 65, affectedFamilies: 145, submittedBy: 'Goa PWD', submittedDate: '2026-07-10', status: 'pending', phase: 1, priority: 'Medium', estimatedCost: 2100, progress: 22, targetCompletion: '2027-11-30', description: 'Coastal road project to improve connectivity along the Goan coast.', currentStage: 'Document Verification' },
-  { id: 'NLAMS-2026-00108', project: 'Pune-Surat Expressway', department: 'NHAI', projectType: 'Highway', state: 'Maharashtra', district: 'Pune', area: 420, affectedFamilies: 734, submittedBy: 'NHAI', submittedDate: '2026-07-05', status: 'review', phase: 2, priority: 'High', estimatedCost: 16500, progress: 38, targetCompletion: '2029-03-31', description: 'New expressway connecting Pune and Surat to reduce travel time.', currentStage: 'Administrative Review' },
-  { id: 'NLAMS-2026-00107', project: 'Kanpur Metro Rail', department: 'Kanpur Metro Rail', projectType: 'Urban Infrastructure', state: 'Uttar Pradesh', district: 'Kanpur', area: 55, affectedFamilies: 167, submittedBy: 'Kanpur Metro', submittedDate: '2026-06-28', status: 'approved', phase: 5, priority: 'High', estimatedCost: 4800, progress: 62, targetCompletion: '2028-12-31', description: 'Metro rail project for Kanpur city to improve urban mobility.', currentStage: 'Award' },
-  { id: 'NLAMS-2026-00106', project: 'Indore-Jabalpur Highway', department: 'Madhya Pradesh PWD', projectType: 'Highway', state: 'Madhya Pradesh', district: 'Indore', area: 280, affectedFamilies: 512, submittedBy: 'MP PWD', submittedDate: '2026-06-20', status: 'acquired', phase: 7, priority: 'Medium', estimatedCost: 7800, progress: 94, targetCompletion: '2027-02-15', description: 'Highway connecting Indore and Jabalpur in Madhya Pradesh.', currentStage: 'Compensation' },
-  { id: 'NLAMS-2026-00105', project: 'Visakhapatnam Port Expansion', department: 'Visakhapatnam Port Trust', projectType: 'Ports', state: 'Andhra Pradesh', district: 'Visakhapatnam', area: 320, affectedFamilies: 123, submittedBy: 'VPT', submittedDate: '2026-06-15', status: 'approved', phase: 6, priority: 'High', estimatedCost: 12000, progress: 88, targetCompletion: '2027-09-30', description: 'Expansion of Visakhapatnam port to handle increased cargo capacity.', currentStage: 'Award' },
-  { id: 'NLAMS-2026-00104', project: 'Lucknow Metro Rail Phase II', department: 'Lucknow Metro Rail', projectType: 'Urban Infrastructure', state: 'Uttar Pradesh', district: 'Lucknow', area: 60, affectedFamilies: 134, submittedBy: 'LMRCLA', submittedDate: '2026-06-10', status: 'review', phase: 2, priority: 'Medium', estimatedCost: 3200, progress: 40, targetCompletion: '2028-06-30', description: 'Second phase of Lucknow Metro Rail project.', currentStage: 'Administrative Review' },
-  { id: 'NLAMS-2026-00103', project: 'Coimbatore-Salem Green Expressway', department: 'NHAI', projectType: 'Highway', state: 'Tamil Nadu', district: 'Coimbatore', area: 150, affectedFamilies: 298, submittedBy: 'NHAI', submittedDate: '2026-06-05', status: 'pending', phase: 1, priority: 'High', estimatedCost: 6500, progress: 15, targetCompletion: '2028-09-30', description: 'Green expressway project in Tamil Nadu.', currentStage: 'Document Verification' },
-  { id: 'NLAMS-2026-00102', project: 'Bhopal-Indore Transmission Line', department: 'Power Grid Corporation', projectType: 'Power Line', state: 'Madhya Pradesh', district: 'Bhopal', area: 95, affectedFamilies: 178, submittedBy: 'PGC', submittedDate: '2026-05-28', status: 'rejected', phase: 3, priority: 'Low', estimatedCost: 1500, progress: 28, targetCompletion: '2027-08-31', description: 'Transmission line to improve power supply in MP.', currentStage: 'Approved' },
-  { id: 'NLAMS-2026-00101', project: 'Ahmedabad-Mumbai High-Speed Rail', department: 'Indian Railways', projectType: 'Railway', state: 'Gujarat', district: 'Ahmedabad', area: 480, affectedFamilies: 1100, submittedBy: 'IR', submittedDate: '2026-05-20', status: 'acquired', phase: 7, priority: 'Critical', estimatedCost: 11000, progress: 97, targetCompletion: '2026-12-31', description: 'High-speed rail project connecting Ahmedabad and Mumbai.', currentStage: 'Compensation' },
-  { id: 'NLAMS-2026-00100', project: 'Chandigarh-Mohali Airport', department: 'AAI', projectType: 'Airport', state: 'Chandigarh', district: 'Chandigarh', area: 180, affectedFamilies: 56, submittedBy: 'AAI', submittedDate: '2026-05-15', status: 'approved', phase: 5, priority: 'Medium', estimatedCost: 2800, progress: 68, targetCompletion: '2027-08-31', description: 'Greenfield airport project near Chandigarh.', currentStage: 'Award' },
+  { id: 'Bharat Bhoomi-2026-00109', project: 'Goa Coastal Road Project', department: 'Goa PWD', projectType: 'Highway', state: 'Goa', district: 'North Goa', area: 65, affectedFamilies: 145, submittedBy: 'Goa PWD', submittedDate: '2026-07-10', status: 'pending', phase: 1, priority: 'Medium', estimatedCost: 2100, progress: 22, targetCompletion: '2027-11-30', description: 'Coastal road project to improve connectivity along the Goan coast.', currentStage: 'Document Verification' },
+  { id: 'Bharat Bhoomi-2026-00108', project: 'Pune-Surat Expressway', department: 'NHAI', projectType: 'Highway', state: 'Maharashtra', district: 'Pune', area: 420, affectedFamilies: 734, submittedBy: 'NHAI', submittedDate: '2026-07-05', status: 'review', phase: 2, priority: 'High', estimatedCost: 16500, progress: 38, targetCompletion: '2029-03-31', description: 'New expressway connecting Pune and Surat to reduce travel time.', currentStage: 'Administrative Review' },
+  { id: 'Bharat Bhoomi-2026-00107', project: 'Kanpur Metro Rail', department: 'Kanpur Metro Rail', projectType: 'Urban Infrastructure', state: 'Uttar Pradesh', district: 'Kanpur', area: 55, affectedFamilies: 167, submittedBy: 'Kanpur Metro', submittedDate: '2026-06-28', status: 'approved', phase: 5, priority: 'High', estimatedCost: 4800, progress: 62, targetCompletion: '2028-12-31', description: 'Metro rail project for Kanpur city to improve urban mobility.', currentStage: 'Award' },
+  { id: 'Bharat Bhoomi-2026-00106', project: 'Indore-Jabalpur Highway', department: 'Madhya Pradesh PWD', projectType: 'Highway', state: 'Madhya Pradesh', district: 'Indore', area: 280, affectedFamilies: 512, submittedBy: 'MP PWD', submittedDate: '2026-06-20', status: 'acquired', phase: 7, priority: 'Medium', estimatedCost: 7800, progress: 94, targetCompletion: '2027-02-15', description: 'Highway connecting Indore and Jabalpur in Madhya Pradesh.', currentStage: 'Compensation' },
+  { id: 'Bharat Bhoomi-2026-00105', project: 'Visakhapatnam Port Expansion', department: 'Visakhapatnam Port Trust', projectType: 'Ports', state: 'Andhra Pradesh', district: 'Visakhapatnam', area: 320, affectedFamilies: 123, submittedBy: 'VPT', submittedDate: '2026-06-15', status: 'approved', phase: 6, priority: 'High', estimatedCost: 12000, progress: 88, targetCompletion: '2027-09-30', description: 'Expansion of Visakhapatnam port to handle increased cargo capacity.', currentStage: 'Award' },
+  { id: 'Bharat Bhoomi-2026-00104', project: 'Lucknow Metro Rail Phase II', department: 'Lucknow Metro Rail', projectType: 'Urban Infrastructure', state: 'Uttar Pradesh', district: 'Lucknow', area: 60, affectedFamilies: 134, submittedBy: 'LMRCLA', submittedDate: '2026-06-10', status: 'review', phase: 2, priority: 'Medium', estimatedCost: 3200, progress: 40, targetCompletion: '2028-06-30', description: 'Second phase of Lucknow Metro Rail project.', currentStage: 'Administrative Review' },
+  { id: 'Bharat Bhoomi-2026-00103', project: 'Coimbatore-Salem Green Expressway', department: 'NHAI', projectType: 'Highway', state: 'Tamil Nadu', district: 'Coimbatore', area: 150, affectedFamilies: 298, submittedBy: 'NHAI', submittedDate: '2026-06-05', status: 'pending', phase: 1, priority: 'High', estimatedCost: 6500, progress: 15, targetCompletion: '2028-09-30', description: 'Green expressway project in Tamil Nadu.', currentStage: 'Document Verification' },
+  { id: 'Bharat Bhoomi-2026-00102', project: 'Bhopal-Indore Transmission Line', department: 'Power Grid Corporation', projectType: 'Power Line', state: 'Madhya Pradesh', district: 'Bhopal', area: 95, affectedFamilies: 178, submittedBy: 'PGC', submittedDate: '2026-05-28', status: 'rejected', phase: 3, priority: 'Low', estimatedCost: 1500, progress: 28, targetCompletion: '2027-08-31', description: 'Transmission line to improve power supply in MP.', currentStage: 'Approved' },
+  { id: 'Bharat Bhoomi-2026-00101', project: 'Ahmedabad-Mumbai High-Speed Rail', department: 'Indian Railways', projectType: 'Railway', state: 'Gujarat', district: 'Ahmedabad', area: 480, affectedFamilies: 1100, submittedBy: 'IR', submittedDate: '2026-05-20', status: 'acquired', phase: 7, priority: 'Critical', estimatedCost: 11000, progress: 97, targetCompletion: '2026-12-31', description: 'High-speed rail project connecting Ahmedabad and Mumbai.', currentStage: 'Compensation' },
+  { id: 'Bharat Bhoomi-2026-00100', project: 'Chandigarh-Mohali Airport', department: 'AAI', projectType: 'Airport', state: 'Chandigarh', district: 'Chandigarh', area: 180, affectedFamilies: 56, submittedBy: 'AAI', submittedDate: '2026-05-15', status: 'approved', phase: 5, priority: 'Medium', estimatedCost: 2800, progress: 68, targetCompletion: '2027-08-31', description: 'Greenfield airport project near Chandigarh.', currentStage: 'Award' },
 ]
 
 export const ALL_PROPOSALS = [...PROPOSALS, ...ADDITIONAL_PROPOSALS]

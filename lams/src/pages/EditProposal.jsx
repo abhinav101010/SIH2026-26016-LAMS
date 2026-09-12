@@ -496,7 +496,7 @@ const ProjectDetailsStep = ({ formData, onChange, onNext }) => {
               label="Proposal ID"
               value={formData.proposalNumber}
               onChange={(e) => onChange('proposalNumber', e.target.value)}
-              placeholder="NLAMS-YYYY-XXXX"
+              placeholder="Bharat Bhoomi-YYYY-XXXX"
               required
             />
           </div>

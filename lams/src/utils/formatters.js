@@ -1,5 +1,5 @@
 /* ============================================================
-   NLAMS Reusable Formatters & Utilities
+   Bharat Bhoomi Reusable Formatters & Utilities
    ============================================================ */
 
 export const formatNumber = (num, decimals = 0) => {

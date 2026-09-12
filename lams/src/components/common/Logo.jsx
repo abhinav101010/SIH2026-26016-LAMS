@@ -72,10 +72,10 @@ const Logo = ({
       {variant === 'full' && (
         <div className="flex flex-col">
           <span className={`font-bold text-foreground ${textSizeMap[size] || textSizeMap.md} leading-tight`}>
-            NLAMS
+            Bharat Bhoomi
           </span>
           <span className="text-xs text-text-secondary font-medium leading-tight">
-            National Land Acquisition & Management System
+            Bharat Bhoomi
           </span>
         </div>
       )}

@@ -1,5 +1,5 @@
 /* ============================================================
-   NLAMS Base Mock Data
+   Bharat Bhoomi Base Mock Data
    Static reference data for the application
    ============================================================ */
 
@@ -8,12 +8,12 @@ export const USER_ROLES = ['Administrator', 'District Collector', 'Sub-Registrar
 export const CURRENT_USER = {
   id: 'USR-001',
   name: 'Abhinav Sharma',
-  email: 'abhinav.sharma@nlams.gov.in',
+  email: 'abhinav.sharma@bharatbhoomi.gov.in',
   role: 'Administrator',
   department: 'Ministry of Road Transport & Highways',
   avatar: null,
   phone: '+91-98765-43210',
-  employeeId: 'NLAMS/ADMIN/001',
+  employeeId: 'Bharat Bhoomi/ADMIN/001',
   joinedDate: '2024-03-15',
   lastLogin: '2026-08-31T10:30:00+05:30',
 }

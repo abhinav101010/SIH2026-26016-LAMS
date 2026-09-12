@@ -1,6 +1,6 @@
-# NLAMS Backend
+# Bharat Bhoomi Backend
 
-National Land Acquisition & Management System — Backend API
+Bharat Bhoomi — Backend API
 
 ## Tech Stack
 
@@ -48,10 +48,10 @@ National Land Acquisition & Management System — Backend API
 
 | Email | Password | Role |
 |-------|----------|------|
-| admin@nlams.gov.in | admin123 | SUPER_ADMIN |
-| officer@nlams.gov.in | admin123 | PROPOSAL_OFFICER |
-| reviewer@nlams.gov.in | admin123 | REVIEWING_AUTHORITY |
-| field@nlams.gov.in | admin123 | FIELD_OFFICER |
+| admin@bharatbhoomi.gov.in | admin123 | SUPER_ADMIN |
+| officer@bharatbhoomi.gov.in | admin123 | PROPOSAL_OFFICER |
+| reviewer@bharatbhoomi.gov.in | admin123 | REVIEWING_AUTHORITY |
+| field@bharatbhoomi.gov.in | admin123 | FIELD_OFFICER |
 
 ## API Endpoints
 

@@ -45,7 +45,7 @@ app.use('/api/audit-logs', require('./routes/audit'))
 app.use('/api/departments', require('./routes/departments'))
 
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'NLAMS API is running', timestamp: new Date().toISOString() })
+  res.json({ success: true, message: 'Bharat Bhoomi API is running', timestamp: new Date().toISOString() })
 })
 
 app.use(notFound)

@@ -1,5 +1,5 @@
 /* ============================================================
-   NLAMS Documents & Projects Mock Data
+   Bharat Bhoomi Documents & Projects Mock Data
    ============================================================ */
 
 export const PROJECTS = [
@@ -98,14 +98,14 @@ export const PROJECTS = [
 ]
 
 export const DOCUMENTS = {
-  'NLAMS-2026-00124': [
+  'Bharat Bhoomi-2026-00124': [
     { id: 'DOC-001', name: 'Proposal Document', type: 'pdf', size: '2.4 MB', uploadDate: '2026-08-24', version: '1.0', verified: true, uploader: 'NHAI Officer' },
     { id: 'DOC-002', name: 'Land Ownership Records', type: 'pdf', size: '5.1 MB', uploadDate: '2026-08-25', version: '1.0', verified: true, uploader: 'Sub-Registrar Office' },
     { id: 'DOC-003', name: 'Survey Report 2024', type: 'pdf', size: '8.7 MB', uploadDate: '2026-08-20', version: '1.2', verified: true, uploader: 'Survey of India' },
     { id: 'DOC-004', name: 'Environmental Clearance', type: 'pdf', size: '3.2 MB', uploadDate: '2026-08-22', version: '1.0', verified: true, uploader: 'MoEF&CC' },
     { id: 'DOC-005', name: 'Notification Gazette', type: 'pdf', size: '1.8 MB', uploadDate: '2026-08-15', version: '1.0', verified: false, uploader: 'District Collector' },
   ],
-  'NLAMS-2026-00123': [
+  'Bharat Bhoomi-2026-00123': [
     { id: 'DOC-006', name: 'Proposal Document', type: 'pdf', size: '3.1 MB', uploadDate: '2026-08-22', version: '1.0', verified: true, uploader: 'Indian Railways' },
     { id: 'DOC-007', name: 'Land Ownership Records', type: 'pdf', size: '7.4 MB', uploadDate: '2026-08-23', version: '1.0', verified: true, uploader: 'Sub-Registrar Office' },
     { id: 'DOC-008', name: 'R&S Report', type: 'pdf', size: '6.3 MB', uploadDate: '2026-08-19', version: '2.1', verified: true, uploader: 'Survey of India' },

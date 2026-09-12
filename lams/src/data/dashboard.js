@@ -1,5 +1,5 @@
 /* ============================================================
-   NLAMS Dashboard Mock Data
+   Bharat Bhoomi Dashboard Mock Data
    Real-time monitoring of land acquisition projects across India
    ============================================================ */
 
@@ -56,9 +56,9 @@ export const TIMELINE_ADHERENCE = [
 ]
 
 export const RECENT_NOTIFICATIONS = [
-  { id: 1, title: 'New proposal submitted for Delhi-Mumbai Expressway', message: 'Proposal NLAMS-2026-00124 requires your review', time: '2 hours ago', unread: true, type: 'approval' },
+  { id: 1, title: 'New proposal submitted for Delhi-Mumbai Expressway', message: 'Proposal Bharat Bhoomi-2026-00124 requires your review', time: '2 hours ago', unread: true, type: 'approval' },
   { id: 2, title: 'Compensation disbursement completed', message: '₹245 Cr disbursed to 340 families in Sector 18, Noida', time: '5 hours ago', unread: true, type: 'compensation' },
   { id: 3, title: 'Award declaration issued', message: 'Notification published in Official Gazette for Mumbai-Nagpur project', time: '1 day ago', unread: false, type: 'document' },
-  { id: 4, title: 'Document verification pending', message: 'Pending documents for Proposal NLAMS-2026-00098', time: '2 days ago', unread: false, type: 'verification' },
+  { id: 4, title: 'Document verification pending', message: 'Pending documents for Proposal Bharat Bhoomi-2026-00098', time: '2 days ago', unread: false, type: 'verification' },
   { id: 5, title: 'Possession certificate issued', message: 'Possession completed for 12 parcels in Jaipur-Delhi highway', time: '3 days ago', unread: false, type: 'possession' },
 ]

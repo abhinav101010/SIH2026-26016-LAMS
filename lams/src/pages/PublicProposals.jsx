@@ -172,8 +172,8 @@ const PublicProposals = () => {
     <div className="h-screen flex flex-col">
       <header className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-foreground">NLAMS</h1>
-          <p className="text-xs text-foreground-secondary">National Land Acquisition Management System</p>
+          <h1 className="text-xl font-bold text-foreground">Bharat Bhoomi</h1>
+          <p className="text-xs text-foreground-secondary">Bharat Bhoomi</p>
         </div>
         <nav className="flex items-center gap-4">
           <span className="text-sm font-medium text-foreground">Explore Proposals</span>

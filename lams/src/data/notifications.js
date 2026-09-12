@@ -1,12 +1,12 @@
 /* ============================================================
-   NLAMS Notifications Mock Data
+   Bharat Bhoomi Notifications Mock Data
    ============================================================ */
 
 export const NOTIFICATIONS = [
   {
     id: 'NLAM-001',
     title: 'New proposal submitted',
-    message: 'Proposal NLAMS-2026-00124 for Delhi–Mumbai Expressway requires your review',
+    message: 'Proposal Bharat Bhoomi-2026-00124 for Delhi–Mumbai Expressway requires your review',
     time: '2 hours ago',
     timestamp: new Date('2026-08-31T11:00:00'),
     unread: true,
@@ -15,7 +15,7 @@ export const NOTIFICATIONS = [
     category: 'Proposal updates',
     priority: 'high',
     action: 'Review now',
-    link: '/proposals/NLAMS-2026-00124',
+    link: '/proposals/Bharat Bhoomi-2026-00124',
   },
   {
     id: 'NLAM-002',
@@ -48,7 +48,7 @@ export const NOTIFICATIONS = [
   {
     id: 'NLAM-004',
     title: 'Document verification pending',
-    message: 'Pending documents for Proposal NLAMS-2026-00098',
+    message: 'Pending documents for Proposal Bharat Bhoomi-2026-00098',
     time: '2 days ago',
     timestamp: new Date('2026-08-29T16:45:00'),
     unread: false,
@@ -57,7 +57,7 @@ export const NOTIFICATIONS = [
     category: 'Approval requests',
     priority: 'high',
     action: 'Verify now',
-    link: '/proposals/NLAMS-2026-00098',
+    link: '/proposals/Bharat Bhoomi-2026-00098',
   },
   {
     id: 'NLAM-005',
@@ -89,7 +89,7 @@ export const NOTIFICATIONS = [
   },
   {
     id: 'NLAM-007',
-    title: 'Status changed: NLAMS-2026-00115',
+    title: 'Status changed: Bharat Bhoomi-2026-00115',
     message: 'Proposal status updated from "Approved" to "Rejected"',
     time: '5 days ago',
     timestamp: new Date('2026-08-26T18:20:00'),
@@ -99,12 +99,12 @@ export const NOTIFICATIONS = [
     category: 'Proposal updates',
     priority: 'medium',
     action: 'View details',
-    link: '/proposals/NLAMS-2026-00115',
+    link: '/proposals/Bharat Bhoomi-2026-00115',
   },
   {
     id: 'NLAM-008',
     title: 'System maintenance scheduled',
-    message: 'Scheduled maintenance on NLAMS platform on 2 September 2026, 2:00–4:00 AM IST',
+    message: 'Scheduled maintenance on Bharat Bhoomi platform on 2 September 2026, 2:00–4:00 AM IST',
     time: '1 week ago',
     timestamp: new Date('2026-08-24T12:00:00'),
     unread: false,
