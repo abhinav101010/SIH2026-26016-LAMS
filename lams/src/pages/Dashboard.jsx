@@ -191,62 +191,228 @@ const Dashboard = () => {
         </Grid>
       </motion.div>
 
-      {/* Main Charts Row */}
-      <motion.div
-        initial="initial"
-        animate="animate"
-        variants={{ animate: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } } }}
+      {/* ==================== CHARTS SECTION ==================== */}
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+        }}
       >
-        <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
-            <ChartCard
-              title="Acquisition Progress"
-              subtitle="Area acquired vs. proposed (ha)"
-              icon={TrendingUp}
+        {/* ==================== MAIN CHARTS ROW ==================== */}
+        <motion.div
+          initial="initial"
+          animate="animate"
+          variants={{
+            animate: {
+              transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.1,
+              },
+            },
+          }}
+          style={{
+            width: '100%',
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              minWidth: 0,
+      
+              display: 'grid',
+      
+              // Desktop: approximately 70 / 30
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: '2fr 1fr',
+              },
+      
+              gap: 3,
+            }}
+          >
+            {/* Acquisition Progress */}
+            <Box
+              sx={{
+                width: '100%',
+                minWidth: 0,
+                display: 'flex',
+              }}
             >
-              {loading ? <SkeletonChart /> : <AcquisitionProgressChart data={trends} />}
-            </ChartCard>
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <ChartCard
-              title="Status Distribution"
-              subtitle="Proposals by current status"
-              icon={Activity}
+              <ChartCard
+                title="Acquisition Progress"
+                subtitle="Area acquired vs. proposed (ha)"
+                icon={TrendingUp}
+                height={420}
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    minWidth: 0,
+                    minHeight: 0,
+                  }}
+                >
+                  {loading ? (
+                    <SkeletonChart />
+                  ) : (
+                    <AcquisitionProgressChart data={trends} />
+                  )}
+                </Box>
+              </ChartCard>
+            </Box>
+      
+            {/* Status Distribution */}
+            <Box
+              sx={{
+                width: '100%',
+                minWidth: 0,
+                display: 'flex',
+              }}
             >
-              {loading ? <SkeletonChart /> : <AcquisitionStatusChart data={statusDistribution} />}
-            </ChartCard>
-          </Grid>
-        </Grid>
-      </motion.div>
-
-      {/* Secondary Charts Row */}
-      <motion.div
-        initial="initial"
-        animate="animate"
-        variants={{ animate: { transition: { staggerChildren: 0.1, delayChildren: 0.2 } } }}
-      >
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <ChartCard
-              title="State-wise Progress"
-              subtitle="Land proposed by state (ha)"
-              icon={Landmark}
+              <ChartCard
+                title="Status Distribution"
+                subtitle="Proposals by current status"
+                icon={Activity}
+                height={420}
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    minWidth: 0,
+                    minHeight: 0,
+                  }}
+                >
+                  {loading ? (
+                    <SkeletonChart />
+                  ) : (
+                    <AcquisitionStatusChart data={statusDistribution} />
+                  )}
+                </Box>
+              </ChartCard>
+            </Box>
+          </Box>
+        </motion.div>
+      
+        {/* ==================== SECONDARY CHARTS ROW ==================== */}
+        <motion.div
+          initial="initial"
+          animate="animate"
+          variants={{
+            animate: {
+              transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2,
+              },
+            },
+          }}
+          style={{
+            width: '100%',
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              minWidth: 0,
+      
+              display: 'grid',
+      
+              // Desktop: approximately 60 / 40
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: '7fr 5fr',
+              },
+      
+              gap: 3,
+            }}
+          >
+            {/* State-wise Progress */}
+            <Box
+              sx={{
+                width: '100%',
+                minWidth: 0,
+                display: 'flex',
+              }}
             >
-              {loading ? <SkeletonChart /> : <StateProgressChart data={stateProgress} />}
-            </ChartCard>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <ChartCard
-              title="Timeline Adherence"
-              subtitle="Project schedule performance"
-              icon={Clock}
+              <ChartCard
+                title="State-wise Progress"
+                subtitle="Land proposed by state (ha)"
+                icon={Landmark}
+                height={360}
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    minWidth: 0,
+                    minHeight: 0,
+                  }}
+                >
+                  {loading ? (
+                    <SkeletonChart />
+                  ) : (
+                    <StateProgressChart data={stateProgress} />
+                  )}
+                </Box>
+              </ChartCard>
+            </Box>
+      
+            {/* Timeline Adherence */}
+            <Box
+              sx={{
+                width: '100%',
+                minWidth: 0,
+                display: 'flex',
+              }}
             >
-              {loading ? <SkeletonChart /> : <TimelineAdherenceChart data={timeline} />}
-            </ChartCard>
-          </Grid>
-        </Grid>
-      </motion.div>
-
+              <ChartCard
+                title="Timeline Adherence"
+                subtitle="Project schedule performance"
+                icon={Clock}
+                height={360}
+                sx={{
+                  width: '100%',
+                  minWidth: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    minWidth: 0,
+                    minHeight: 0,
+                  }}
+                >
+                  {loading ? (
+                    <SkeletonChart />
+                  ) : (
+                    <TimelineAdherenceChart data={timeline} />
+                  )}
+                </Box>
+              </ChartCard>
+            </Box>
+          </Box>
+        </motion.div>
+      </Box>
+      
       {/* Recent Proposals */}
       <motion.div variants={fadeInUp}>
         <Card

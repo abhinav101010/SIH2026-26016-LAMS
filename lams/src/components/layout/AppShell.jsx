@@ -26,9 +26,7 @@ const AppShell = ({ children }) => {
             flex: 1,
             overflow: 'auto',
             p: { xs: 2, sm: 3, md: 4 },
-            maxWidth: 1600,
             width: '100%',
-            mx: 'auto',
           }}
         >
           {children}

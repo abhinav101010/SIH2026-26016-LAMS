@@ -6,6 +6,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
+import { Paper, Box, Typography } from '@mui/material'
 
 const statusColors = {
   pending: '#F59E0B',
@@ -19,11 +20,11 @@ const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const d = payload[0].payload
     return (
-      <div className="clay-card p-3 shadow-clay-md border border-border">
-        <p className="text-xs font-medium text-foreground mb-1">{d.status}</p>
-        <p className="text-xs text-text-secondary">Count: {d.count}</p>
-        <p className="text-xs text-text-secondary">Amount: ₹{d.amount} Cr</p>
-      </div>
+      <Paper elevation={3} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="caption" fontWeight={600} sx={{ mb: 0.5, display: 'block' }}>{d.status}</Typography>
+        <Typography variant="caption" color="text.secondary">Count: {d.count}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Amount: ₹{d.amount} Cr</Typography>
+      </Paper>
     )
   }
   return null
@@ -42,7 +43,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent }) => {
       y={y}
       textAnchor="middle"
       dominantBaseline="middle"
-      className="text-[11px] font-medium fill-foreground"
+      style={{ fontSize: 11, fontWeight: 500, fill: '#0f172a' }}
     >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
