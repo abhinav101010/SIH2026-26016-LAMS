@@ -23,7 +23,7 @@ const claymorphismTokens = {
       rejected: '#dc2626',
       review: '#2563eb',
       possession: '#0d9488',
-      notification: '#7c3aed',
+      notification: '#1e6fff',
     },
     shadow: {
       clay: '8px 12px 32px rgba(30, 111, 255, 0.06), 4px 6px 14px rgba(15, 23, 42, 0.04)',
@@ -55,7 +55,7 @@ const claymorphismTokens = {
       rejected: '#f87171',
       review: '#60a5fa',
       possession: '#2dd4bf',
-      notification: '#a78bfa',
+      notification: '#60a5fa',
     },
     shadow: {
       clay: '8px 12px 32px rgba(0, 0, 0, 0.35), 4px 6px 14px rgba(0, 0, 0, 0.25)',

@@ -26,6 +26,10 @@ import {
   CardContent,
   Typography,
   Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
   alpha,
   useTheme,
 } from '@mui/material'
@@ -93,6 +97,7 @@ const MapController = ({ selectedId, proposals, onMapReady }) => {
 
 const PublicProposals = () => {
   const navigate = useNavigate()
+  const theme = useTheme()
   const [proposals, setProposals] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -192,7 +197,6 @@ const PublicProposals = () => {
         elevation={0}
         sx={{
           bgcolor: isDark ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-          backdropFilter: 'blur(12px)',
           borderBottom: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
           color: 'text.primary',
         }}
@@ -200,7 +204,7 @@ const PublicProposals = () => {
         <Toolbar sx={{ justifyContent: 'space-between', minHeight: 56, px: { xs: 2, md: 3 } }}>
           <Box>
             <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}>Bharat Bhoomi</Typography>
-            <Typography variant="caption" color="text.secondary">National Land Acquisition Management System</Typography>
+            <Typography variant="caption" color="text.secondary">Land Acquisition Management Platform</Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Chip label="Explore Proposals" size="small" sx={{ fontWeight: 600, fontSize: '0.8125rem', display: { xs: 'none', sm: 'flex' } }} />

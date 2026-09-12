@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Users,
   Shield,
   UserPlus,
-  Search,
   Edit3,
   Trash2,
   ShieldCheck,
@@ -40,7 +39,6 @@ import {
   Tab,
   Button,
   Chip,
-  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -307,7 +305,7 @@ function UserDetailDrawer({ isOpen, onClose, user, onStatusChange, onRoleChange,
   if (!user) return null
   return (
     <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, display: isOpen ? 'flex' : 'none' }}>
-      <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.3)' }} onClick={onClose} />
       <Box sx={{ position: 'absolute', right: 0, top: 0, height: '100%', width: { xs: '100%', sm: 420 }, bgcolor: 'background.paper', borderLeft: '1px solid', borderColor: 'divider', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflowY: 'auto' }}>
         <Box sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
@@ -371,7 +369,7 @@ function RoleDetailDrawer({ isOpen, onClose, role, users, onEdit, onDelete }) {
   const permissionCount = role.permissions?.length || 0
   return (
     <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, display: isOpen ? 'flex' : 'none' }}>
-      <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.3)' }} onClick={onClose} />
       <Box sx={{ position: 'absolute', right: 0, top: 0, height: '100%', width: { xs: '100%', sm: 420 }, bgcolor: 'background.paper', borderLeft: '1px solid', borderColor: 'divider', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', overflowY: 'auto' }}>
         <Box sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
@@ -434,9 +432,6 @@ const UsersPage = () => {
   const [roles, setRoles] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
   const [selectedUser, setSelectedUser] = useState(null)
   const [selectedRole, setSelectedRole] = useState(null)
   const [userModalOpen, setUserModalOpen] = useState(false)
@@ -474,17 +469,6 @@ const UsersPage = () => {
   }
 
   useEffect(() => { fetchData() }, [])
-
-  const filteredUsers = useMemo(() => {
-    let result = users
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter((u) => u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.employeeId?.toLowerCase().includes(q))
-    }
-    if (roleFilter) result = result.filter((u) => u.role === roleFilter)
-    if (statusFilter) result = result.filter((u) => (statusFilter === 'ACTIVE' ? u.isActive : !u.isActive))
-    return result
-  }, [users, searchQuery, roleFilter, statusFilter])
 
   const handleSaveUser = async (data) => {
     setSubmitting(true)
@@ -671,34 +655,7 @@ const UsersPage = () => {
 
           {activeTab === 'users' && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                <Box sx={{ flex: 1, minWidth: 240 }}>
-                  <TextField
-                    placeholder="Search users by name, email, or employee ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    size="small"
-                    fullWidth
-                    InputProps={{
-                      startAdornment: <Search size={16} style={{ marginRight: 8, opacity: 0.5 }} />,
-                    }}
-                  />
-                </Box>
-                <FormControl size="small" sx={{ minWidth: 160 }}>
-                  <InputLabel>Role</InputLabel>
-                  <Select value={roleFilter} label="Role" onChange={(e) => setRoleFilter(e.target.value)}>
-                    <MenuItem value="">All Roles</MenuItem>
-                    {roles.map((r) => <MenuItem key={r.id} value={r.name}>{ROLE_LABELS[r.name] || r.name}</MenuItem>)}
-                  </Select>
-                </FormControl>
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <InputLabel>Status</InputLabel>
-                  <Select value={statusFilter} label="Status" onChange={(e) => setStatusFilter(e.target.value)}>
-                    <MenuItem value="">All Status</MenuItem>
-                    <MenuItem value="ACTIVE">Active</MenuItem>
-                    <MenuItem value="INACTIVE">Inactive</MenuItem>
-                  </Select>
-                </FormControl>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 {canCreateUser && (
                   <ClayButton variant="primary" icon={UserPlus} onClick={() => { setEditingUser(null); setUserModalOpen(true) }}>Add User</ClayButton>
                 )}
@@ -707,7 +664,7 @@ const UsersPage = () => {
               <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
                 <Box sx={{ p: 0 }}>
                   <DataGrid
-                    rows={filteredUsers.map((u) => ({ ...u, id: u.id }))}
+                    rows={users.map((u) => ({ ...u, id: u.id }))}
                     columns={userColumns}
                     loading={loading}
                     pageSizeOptions={[10, 25, 50]}

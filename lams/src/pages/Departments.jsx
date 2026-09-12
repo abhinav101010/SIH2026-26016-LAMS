@@ -9,7 +9,7 @@ import ClayInput from '../components/ui/ClayInput'
 import ClayBadge from '../components/ui/ClayBadge'
 import Modal from '../components/ui/Modal'
 import { formatDate } from '../utils/formatters'
-import { Box, Card, Typography, TextField, FormControl, InputLabel, Select, MenuItem, IconButton, alpha, useTheme } from '@mui/material'
+import { Box, Card, Typography, IconButton, FormControl, InputLabel, Select, MenuItem, alpha, useTheme } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 
 const Departments = () => {
@@ -23,7 +23,6 @@ const Departments = () => {
   const [editingDept, setEditingDept] = useState(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: '', code: '', description: '', isActive: true })
-  const [search, setSearch] = useState('')
 
   const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
@@ -42,11 +41,6 @@ const Departments = () => {
   useEffect(() => {
     fetchDepartments()
   }, [])
-
-  useEffect(() => {
-    const timer = setTimeout(fetchDepartments, 400)
-    return () => clearTimeout(timer)
-  }, [search])
 
   const openCreate = () => {
     setEditingDept(null)
@@ -170,21 +164,7 @@ const Departments = () => {
       </Box>
 
       <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
-        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ position: 'relative', maxWidth: 320 }}>
-            <Search size={16} sx={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'text.secondary' }} />
-            <TextField
-              placeholder="Search departments..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              size="small"
-              fullWidth
-              InputProps={{
-                startAdornment: <Search size={16} style={{ marginRight: 8, opacity: 0.5 }} />,
-              }}
-            />
-          </Box>
-
+        <Box sx={{ p: 0 }}>
           <Box sx={{ height: 520, width: '100%' }}>
             <DataGrid
               rows={departments}

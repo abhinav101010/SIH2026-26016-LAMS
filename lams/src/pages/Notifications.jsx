@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Bell, Check, Search, Trash2, AlertCircle, Calendar, CheckCircle, FileText, Settings, Home } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bell, Check, Trash2, AlertCircle, Calendar, FileText, Settings, Home } from 'lucide-react'
 import ClayButton from '../components/ui/ClayButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import Modal from '../components/ui/Modal'
@@ -7,7 +7,7 @@ import { notificationApi } from '../services'
 import { useAuth } from '../auth/AuthContext'
 import PermissionGate from '../auth/PermissionGate'
 import { useToast } from '../components/ui/Toast'
-import { Box, Card, Typography, TextField, Chip, alpha, useTheme, IconButton } from '@mui/material'
+import { Box, Card, Typography, IconButton, alpha, useTheme } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 
 const typeIcons = {
@@ -39,8 +39,6 @@ const NotificationsPage = () => {
   const toast = useToast()
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
-  const [filter, setFilter] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState(null)
@@ -64,16 +62,6 @@ const NotificationsPage = () => {
     }
     fetchNotifications()
   }, [])
-
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter((n) => {
-      if (filter === 'unread' && n.unread) return true
-      if (filter === 'read' && !n.unread) return false
-      if (filter !== 'all' && n.category !== filter) return false
-      if (searchQuery && !n.title.toLowerCase().includes(searchQuery.toLowerCase()) && !n.message.toLowerCase().includes(searchQuery.toLowerCase())) return false
-      return true
-    })
-  }, [filter, searchQuery, notifications])
 
   const unreadCount = notifications.filter((n) => n.unread).length
 
@@ -235,42 +223,9 @@ const NotificationsPage = () => {
 
       <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              {[
-                { label: 'All', value: 'all', count: notifications.length },
-                { label: 'Unread', value: 'unread', count: unreadCount },
-                { label: 'Read', value: 'read', count: notifications.length - unreadCount },
-              ].map((tab) => (
-                <Chip
-                  key={tab.value}
-                  label={`${tab.label} (${tab.count})`}
-                  onClick={() => setFilter(tab.value)}
-                  color={filter === tab.value ? 'primary' : 'default'}
-                  variant={filter === tab.value ? 'filled' : 'outlined'}
-                  sx={{ borderRadius: 2, fontWeight: 500, fontSize: '0.8125rem' }}
-                />
-              ))}
-            </Box>
-
-            <Box sx={{ position: 'relative', width: 220 }}>
-              <Search size={14} sx={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'text.secondary' }} />
-              <TextField
-                placeholder="Search notifications..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                size="small"
-                fullWidth
-                InputProps={{
-                  startAdornment: <Search size={14} style={{ marginRight: 6, opacity: 0.5 }} />,
-                }}
-              />
-            </Box>
-          </Box>
-
           <Box sx={{ height: 520, width: '100%' }}>
             <DataGrid
-              rows={filteredNotifications}
+              rows={notifications}
               columns={columns}
               loading={loading}
               pageSizeOptions={[10, 25, 50]}

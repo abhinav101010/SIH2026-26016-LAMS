@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { auditApi } from '../services'
 import { useToast } from '../components/ui/Toast'
@@ -7,7 +7,7 @@ import ClayButton from '../components/ui/ClayButton'
 import ClayBadge from '../components/ui/ClayBadge'
 import Modal from '../components/ui/Modal'
 import { formatDate } from '../utils/formatters'
-import { Box, Card, Typography, TextField, FormControl, InputLabel, Select, MenuItem, IconButton, alpha, useTheme } from '@mui/material'
+import { Box, Card, Typography, IconButton, alpha, useTheme } from '@mui/material'
 import { DataGrid } from '@mui/x-data-grid'
 
 const CHANGE_TYPE_COLORS = {
@@ -49,9 +49,6 @@ const AuditLogs = () => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
-  const [search, setSearch] = useState('')
-  const [changeTypeFilter, setChangeTypeFilter] = useState('')
-  const [recordTypeFilter, setRecordTypeFilter] = useState('')
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false)
@@ -64,10 +61,6 @@ const AuditLogs = () => {
     setLoading(true)
     try {
       const params = { page, limit: 10 }
-      if (search) params.search = search
-      if (changeTypeFilter) params.action = changeTypeFilter
-      if (recordTypeFilter) params.entityType = recordTypeFilter
-
       const response = await auditApi.getAuditLogs(params)
       setLogs(response.data || [])
       setTotalPages(response.pagination?.totalPages || 1)
@@ -90,15 +83,7 @@ const AuditLogs = () => {
     if (hasPermission('AUDIT_VIEW') && fetchedRef.current) {
       fetchLogs()
     }
-  }, [page, changeTypeFilter, recordTypeFilter])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1)
-      fetchedRef.current = false
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [search])
+  }, [page])
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -224,46 +209,8 @@ const AuditLogs = () => {
         </Box>
       </Box>
 
-      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
-        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <Box sx={{ flex: 1, minWidth: 240 }}>
-              <TextField
-                placeholder="Search audit logs..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                size="small"
-                fullWidth
-                InputProps={{
-                  startAdornment: <Search size={16} style={{ marginRight: 8, opacity: 0.5 }} />,
-                }}
-              />
-            </Box>
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>Change</InputLabel>
-              <Select value={changeTypeFilter} label="Change" onChange={(e) => setChangeTypeFilter(e.target.value)}>
-                <MenuItem value="">All Changes</MenuItem>
-                <MenuItem value="CREATED">Created</MenuItem>
-                <MenuItem value="UPDATED">Updated</MenuItem>
-                <MenuItem value="DELETED">Deleted</MenuItem>
-                <MenuItem value="SUBMITTED">Submitted</MenuItem>
-                <MenuItem value="APPROVED">Approved</MenuItem>
-                <MenuItem value="REJECTED">Rejected</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>Record</InputLabel>
-              <Select value={recordTypeFilter} label="Record" onChange={(e) => setRecordTypeFilter(e.target.value)}>
-                <MenuItem value="">All Records</MenuItem>
-                <MenuItem value="Proposal">Proposal</MenuItem>
-                <MenuItem value="User">User</MenuItem>
-                <MenuItem value="Role">Role</MenuItem>
-                <MenuItem value="LandParcel">Land Parcel</MenuItem>
-                <MenuItem value="Document">Document</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-
+      <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
+        <Box sx={{ p: 0 }}>
           <Box sx={{ height: 520, width: '100%' }}>
             <DataGrid
               rows={logs}
@@ -280,12 +227,6 @@ const AuditLogs = () => {
               }}
             />
           </Box>
-
-          {total > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              Showing {logs.length} of {total} records
-            </Typography>
-          )}
         </Box>
       </Card>
 
