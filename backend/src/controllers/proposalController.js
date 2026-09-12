@@ -15,8 +15,8 @@ const ALLOWED_TRANSITIONS = {
   ACQUIRED: ['POSSESSION'],
 }
 
-const calculateProposalStatus = async (proposalId, round) => {
-  const approvals = await prisma.approval.findMany({
+const calculateProposalStatus = async (tx, proposalId, round) => {
+  const approvals = await tx.approval.findMany({
     where: { proposalId, round },
     select: { action: true },
   })
@@ -30,8 +30,8 @@ const calculateProposalStatus = async (proposalId, round) => {
   return 'UNDER_REVIEW'
 }
 
-const calculateApprovalProgress = async (proposalId, round) => {
-  const approvals = await prisma.approval.findMany({
+const calculateApprovalProgress = async (tx, proposalId, round) => {
+  const approvals = await tx.approval.findMany({
     where: { proposalId, round },
     select: { action: true },
   })
@@ -80,23 +80,79 @@ const getAllProposals = async (req, res) => {
     }
 
     if (req.user.role !== 'SUPER_ADMIN') {
-      where.departmentId = req.user.departmentId
+      const ownerCondition = { departmentId: req.user.departmentId }
+      const approverCondition = {
+        AND: [
+          { approvingDepartments: { not: null } },
+        ],
+      }
+      where.AND = [where.AND || {}, { OR: [ownerCondition, approverCondition] }]
     }
 
-    const [data, total] = await Promise.all([
-      prisma.proposal.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          createdBy: { select: { name: true, email: true } },
-          departmentRef: { select: { id: true, name: true, code: true } },
-          parcels: true,
-        },
-      }),
-      prisma.proposal.count({ where }),
-    ])
+    let data, total
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const deptId = req.user.departmentId
+      const baseWhere = { ...where }
+      delete baseWhere.AND
+      
+      const [ownerData, ownerTotal] = await Promise.all([
+        prisma.proposal.findMany({
+          where: { ...baseWhere, departmentId: deptId },
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { [sortBy]: sortOrder },
+          include: {
+            createdBy: { select: { name: true, email: true } },
+            departmentRef: { select: { id: true, name: true, code: true } },
+            parcels: true,
+          },
+        }),
+        prisma.proposal.count({ where: { ...baseWhere, departmentId: deptId } }),
+      ])
+      
+      const [approverData, approverTotal] = await Promise.all([
+        prisma.proposal.findMany({
+          where: { ...baseWhere, approvingDepartments: { not: null } },
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { [sortBy]: sortOrder },
+          include: {
+            createdBy: { select: { name: true, email: true } },
+            departmentRef: { select: { id: true, name: true, code: true } },
+            parcels: true,
+          },
+        }),
+        prisma.proposal.count({ where: { ...baseWhere, approvingDepartments: { not: null } } }),
+      ])
+      
+      const ownerIds = new Set(ownerData.map(p => p.id))
+      const combined = [...ownerData, ...approverData.filter(p => !ownerIds.has(p.id))]
+      const seen = new Set()
+      data = combined.filter(item => {
+        const key = item.id
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      total = ownerTotal + approverTotal
+    } else {
+      const [ownerData, ownerTotal] = await Promise.all([
+        prisma.proposal.findMany({
+          where,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { [sortBy]: sortOrder },
+          include: {
+            createdBy: { select: { name: true, email: true } },
+            departmentRef: { select: { id: true, name: true, code: true } },
+            parcels: true,
+          },
+        }),
+        prisma.proposal.count({ where }),
+      ])
+      data = ownerData
+      total = ownerTotal
+    }
 
     return paginatedResponse(res, data, {
       page,
@@ -135,8 +191,12 @@ const getProposalById = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     return successResponse(res, proposal)
@@ -373,8 +433,12 @@ const submitProposal = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (proposal.status !== 'DRAFT' && proposal.status !== 'CHANGES_REQUESTED' && proposal.status !== 'REJECTED') {
@@ -396,7 +460,7 @@ const submitProposal = async (req, res) => {
     }
 
     const nextRound = proposal.approvalRound + 1
-    const status = await calculateProposalStatus(id, proposal.approvalRound)
+    const status = await calculateProposalStatus(prisma, id, proposal.approvalRound)
 
     const updated = await prisma.proposal.update({
       where: { id },
@@ -460,8 +524,12 @@ const startReview = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (proposal.status !== 'FIELD_VERIFICATION') {
@@ -495,8 +563,12 @@ const startFieldVerification = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'FIELD_OFFICER') {
@@ -537,8 +609,12 @@ const completeVerification = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'FIELD_OFFICER') {
@@ -646,8 +722,8 @@ const approveProposal = async (req, res) => {
         },
       })
 
-      const newStatus = await calculateProposalStatus(id, currentRound)
-      const newProgress = await calculateApprovalProgress(id, currentRound)
+      const newStatus = await calculateProposalStatus(tx, id, currentRound)
+      const newProgress = await calculateApprovalProgress(tx, id, currentRound)
 
       const updated = await tx.proposal.update({
         where: { id },
@@ -798,8 +874,12 @@ const requestChanges = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (proposal.status !== 'UNDER_REVIEW') {
@@ -860,8 +940,12 @@ const dropProposal = async (req, res) => {
       return errorResponse(res, 'Proposal not found', 404)
     }
 
-    if (req.user.role !== 'SUPER_ADMIN' && proposal.departmentId !== req.user.departmentId) {
-      return errorResponse(res, 'Access denied', 403)
+    if (req.user.role !== 'SUPER_ADMIN') {
+      const isOwner = proposal.departmentId === req.user.departmentId
+      const isApprover = Array.isArray(proposal.approvingDepartments) && proposal.approvingDepartments.includes(req.user.departmentId)
+      if (!isOwner && !isApprover) {
+        return errorResponse(res, 'Access denied', 403)
+      }
     }
 
     if (proposal.status !== 'REJECTED') {
