@@ -1,31 +1,40 @@
-import { useState, useContext } from 'react'
+import { useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
-import { AuthContext } from '../../auth/AuthContext'
+import { Box } from '@mui/material'
 
 const AppShell = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false)
-  const { user } = useContext(AuthContext)
+  const sidebarWidth = collapsed ? 72 : 260
 
   return (
-    <div className="flex h-screen bg-transparent">
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <Header user={user} />
-        <main
-          className={`
-            flex-1 overflow-auto
-            transition-all duration-300
-            ${collapsed ? 'ml-0' : 'ml-0'}
-          `}
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        <Header />
+        <Box
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            p: { xs: 2, sm: 3, md: 4 },
+            maxWidth: 1600,
+            width: '100%',
+            mx: 'auto',
+          }}
         >
-          <div className="p-6 max-w-[1600px] mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+          {children}
+        </Box>
+      </Box>
+    </Box>
   )
 }
 

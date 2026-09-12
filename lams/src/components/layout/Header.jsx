@@ -2,29 +2,33 @@ import { useState, useEffect } from 'react'
 import { Bell, Search, User, Sun, Moon, Settings } from 'lucide-react'
 import Breadcrumb from '../common/Breadcrumb'
 import { useAuth } from '../../auth/AuthContext'
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  IconButton,
+  InputBase,
+  Badge,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Typography,
+  Tooltip,
+} from '@mui/material'
+import { useAppTheme } from '../../styles/ThemeProvider'
 
 const Header = ({ onSearch, user }) => {
   const { hasPermission } = useAuth()
+  const { mode, toggleTheme } = useAppTheme()
+  const isDark = mode === 'dark'
   const [searchValue, setSearchValue] = useState('')
-  const [dark, setDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark')
-    }
-    return false
-  })
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(null)
+  const [showNotifications, setShowNotifications] = useState(null)
 
-  useEffect(() => {
-    const root = document.documentElement
-    if (dark) {
-      root.classList.add('dark')
-      root.setAttribute('data-theme', 'dark')
-    } else {
-      root.classList.remove('dark')
-      root.setAttribute('data-theme', 'light')
-    }
-  }, [dark])
+  const unreadCount = 3
 
   const handleSearch = (e) => {
     const val = e.target.value
@@ -32,134 +36,166 @@ const Header = ({ onSearch, user }) => {
     onSearch?.(val)
   }
 
-  const unreadCount = 3
-
   return (
-    <header
-      className={`
-        sticky top-0 z-40
-        bg-card/80 backdrop-blur-md border-b border-border
-        flex items-center justify-between
-        h-16 px-6
-      `}
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        bgcolor: isDark ? 'rgba(17, 24, 39, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+        color: 'text.primary',
+      }}
     >
-      <div className="flex items-center gap-4">
-        <Breadcrumb />
-      </div>
+      <Toolbar sx={{ justifyContent: 'space-between', minHeight: 64, px: { xs: 2, md: 3 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Breadcrumb />
+        </Box>
 
-      <div className="flex items-center gap-2">
-        {/* Search */}
-        <div className="relative hidden md:block">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-tertiary"
-          />
-          <input
-            type="text"
-            value={searchValue}
-            onChange={handleSearch}
-            placeholder="Search..."
-            className={`
-              pl-10 pr-4 py-2 rounded-xl
-              bg-surface border border-border
-              focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-              text-foreground text-sm
-              transition-all duration-200
-              w-64
-            `}
-          />
-        </div>
-
-        {/* Dark mode toggle */}
-        <button
-          onClick={() => setDark(!dark)}
-          className={`
-            w-9 h-9 rounded-xl flex items-center justify-center
-            text-foreground-secondary hover:text-foreground
-            hover:bg-surface transition-all duration-200
-          `}
-          title="Toggle dark mode"
-        >
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
-        {/* Notifications */}
-        {hasPermission('NOTIFICATIONS_VIEW') && (
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className={`
-                relative w-9 h-9 rounded-xl flex items-center justify-center
-                text-foreground-secondary hover:text-foreground
-                hover:bg-surface transition-all duration-200
-              `}
-              title="Notifications"
-            >
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span
-                  className={`
-                    absolute -top-1 -right-1
-                    flex items-center justify-center
-                    text-xs font-bold text-white
-                    bg-primary rounded-full
-                    w-5 h-5
-                  `}
-                >
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* User menu */}
-        <div className="relative">
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className={`
-              flex items-center gap-2
-              w-9 h-9 rounded-xl
-              bg-primary/10 text-primary
-              hover:bg-primary/20
-              transition-all duration-200
-            `}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+              borderRadius: 3,
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+              px: 1,
+              py: 0.5,
+              transition: 'all 0.2s ease',
+              '&:focus-within': {
+                borderColor: 'primary.main',
+                bgcolor: isDark ? 'rgba(96,165,250,0.06)' : 'rgba(30,111,255,0.03)',
+              },
+            }}
           >
-            <User size={18} />
-          </button>
+            <Search size={16} style={{ color: 'inherit', opacity: 0.5 }} />
+            <InputBase
+              placeholder="Search..."
+              value={searchValue}
+              onChange={handleSearch}
+              sx={{
+                ml: 1,
+                fontSize: '0.875rem',
+                width: 200,
+                '& input::placeholder': { opacity: 0.6 },
+              }}
+            />
+          </Box>
 
-          {showUserMenu && (
-            <div
-              className={`
-                absolute right-0 mt-2 w-48
-                clay-card shadow-clay-lg
-                py-1 z-50
-              `}
+          <Tooltip title="Toggle theme">
+            <IconButton
+              onClick={toggleTheme}
+              size="small"
+              sx={{
+                color: 'text.secondary',
+                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(30,111,255,0.06)' },
+              }}
             >
-              <div className="px-4 py-3 border-b border-border">
-                <p className="font-medium text-foreground">{user?.name || 'User'}</p>
-                <p className="text-sm text-foreground-secondary">{user?.role || 'Role'}</p>
-              </div>
-              <div className="py-1">
-                <a
-                  href="/settings"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-surface transition-colors"
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </IconButton>
+          </Tooltip>
+
+          {hasPermission('NOTIFICATIONS_VIEW') && (
+            <>
+              <Tooltip title="Notifications">
+                <IconButton
+                  onClick={(e) => setShowNotifications(e.currentTarget)}
+                  size="small"
+                  sx={{
+                    color: 'text.secondary',
+                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(30,111,255,0.06)' },
+                  }}
                 >
-                  <Settings size={14} />
-                  Settings
-                </a>
-                <a
-                  href="/login"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-surface transition-colors"
-                >
-                  Sign Out
-                </a>
-              </div>
-            </div>
+                  <Badge badgeContent={unreadCount} color="primary" sx={{ '& .MuiBadge-badge': { borderRadius: 2, fontWeight: 700 } }}>
+                    <Bell size={18} />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={showNotifications}
+                open={Boolean(showNotifications)}
+                onClose={() => setShowNotifications(null)}
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 320,
+                    borderRadius: 4,
+                    boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(30,111,255,0.08)',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+                  },
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              >
+                <Box sx={{ px: 2.5, py: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={700}>Notifications</Typography>
+                  <Typography variant="caption" color="text.secondary">3 unread</Typography>
+                </Box>
+                <Divider />
+                <MenuItem onClick={() => setShowNotifications(null)} sx={{ py: 1.5, px: 2.5 }}>
+                  <ListItemIcon><Bell size={18} /></ListItemIcon>
+                  <ListItemText primary="New proposal requires review" secondary="2 hours ago" />
+                </MenuItem>
+                <MenuItem onClick={() => setShowNotifications(null)} sx={{ py: 1.5, px: 2.5 }}>
+                  <ListItemIcon><Bell size={18} /></ListItemIcon>
+                  <ListItemText primary="Document verification pending" secondary="1 day ago" />
+                </MenuItem>
+              </Menu>
+            </>
           )}
-        </div>
-      </div>
-    </header>
+
+          <Tooltip title="Account">
+            <IconButton
+              onClick={(e) => setShowUserMenu(e.currentTarget)}
+              size="small"
+              sx={{
+                ml: 0.5,
+                width: 36,
+                height: 36,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': { bgcolor: 'primary.dark' },
+              }}
+            >
+              <User size={18} />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={showUserMenu}
+            open={Boolean(showUserMenu)}
+            onClose={() => setShowUserMenu(null)}
+            PaperProps={{
+              sx: {
+                mt: 1.5,
+                minWidth: 220,
+                borderRadius: 4,
+                boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(30,111,255,0.08)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+              },
+            }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            <Box sx={{ px: 2.5, py: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700}>{user?.name || 'User'}</Typography>
+              <Typography variant="caption" color="text.secondary">{user?.role || 'Role'}</Typography>
+            </Box>
+            <Divider />
+            <MenuItem onClick={() => setShowUserMenu(null)} component="a" href="/settings">
+              <ListItemIcon><Settings size={18} /></ListItemIcon>
+              <ListItemText>Settings</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => setShowUserMenu(null)} component="a" href="/login">
+              <ListItemIcon><User size={18} /></ListItemIcon>
+              <ListItemText>Sign Out</ListItemText>
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
   )
 }
 

@@ -4,9 +4,24 @@ import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, LogIn, Shield, Users, ClipboardCheck } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import Logo from '../components/common/Logo'
+import {
+  Box,
+  Card,
+  TextField,
+  IconButton,
+  InputAdornment,
+  Checkbox,
+  FormControlLabel,
+  Typography,
+  Link as MuiLink,
+  Alert,
+  CircularProgress,
+  useTheme,
+} from '@mui/material'
 
 const Login = () => {
   const { login } = useAuth()
+  const theme = useTheme()
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
@@ -40,200 +55,346 @@ const Login = () => {
   ]
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <Box
+      sx={{
+        display: 'flex',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       {/* Left Side — Brand */}
-      <div className="hidden lg:flex lg:flex-col lg:w-1/2 xl:w-5/12 relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
-        <div className="absolute inset-0 opacity-10">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-              </pattern>
-              <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
-                <circle cx="12" cy="12" r="1" fill="white" opacity="0.3" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-            <rect width="100%" height="100%" fill="url(#dots)" />
-          </svg>
-        </div>
+      <Box
+        sx={{
+          display: { xs: 'none', lg: 'flex' },
+          flexDirection: 'column',
+          width: { lg: '45%', xl: '40%' },
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(145deg, #0f3d7a 0%, #1e6fff 50%, #0a2a5c 100%)',
+          color: 'white',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.08,
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '48px 48px',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(circle at 20% 80%, rgba(13,158,110,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(217,119,6,0.1) 0%, transparent 50%)',
+          }}
+        />
 
-        <div className="relative flex flex-col h-full p-10 text-white">
-          <div className="mb-12">
-            <Logo size="lg" variant="full" animated={true} />
-          </div>
+        <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', p: { lg: 6, xl: 8 } }}>
+          <Box sx={{ mb: 6 }}>
+            <Logo size="lg" variant="full" animated />
+          </Box>
 
-          <div className="mt-auto">
-            <h1 className="text-3xl font-bold mb-3 leading-tight">
-              Digital Land Acquisition.<br />
-              Transparent Governance.<br />
-              Faster Infrastructure.
-            </h1>
-            <p className="text-blue-100 text-sm mb-10 leading-relaxed max-w-md">
-              Bharat Bhoomi — digitizing and monitoring the land
-              acquisition lifecycle across India with full transparency and accountability.
-            </p>
+          <Box sx={{ mt: 'auto' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+            >
+              <Typography variant="h3" fontWeight={700} sx={{ lineHeight: 1.2, mb: 2.5, letterSpacing: '-0.03em' }}>
+                Digital Land Acquisition.
+                <br />
+                Transparent Governance.
+                <br />
+                Faster Infrastructure.
+              </Typography>
+              <Typography variant="body1" sx={{ opacity: 0.85, mb: 6, maxWidth: 420, lineHeight: 1.7 }}>
+                Bharat Bhoomi — digitizing and monitoring the land acquisition lifecycle across India with
+                full transparency and accountability.
+              </Typography>
+            </motion.div>
 
-            <div className="grid grid-cols-3 gap-4 mb-10">
-              <div className="bg-white/10 rounded-2xl p-4 text-center border border-white/10">
-                <p className="text-2xl font-bold">1,248</p>
-                <p className="text-xs text-blue-200 mt-1">Active Projects</p>
-              </div>
-              <div className="bg-white/10 rounded-2xl p-4 text-center border border-white/10">
-                <p className="text-2xl font-bold">52K+</p>
-                <p className="text-xs text-blue-200 mt-1">Hectares Proposed</p>
-              </div>
-              <div className="bg-white/10 rounded-2xl p-4 text-center border border-white/10">
-                <p className="text-2xl font-bold">31K+</p>
-                <p className="text-xs text-blue-200 mt-1">Hectares Acquired</p>
-              </div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 5 }}>
+                {[
+                  { value: '1,248', label: 'Active Projects' },
+                  { value: '52K+', label: 'Hectares Proposed' },
+                  { value: '31K+', label: 'Hectares Acquired' },
+                ].map((stat, i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 4,
+                      bgcolor: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>
+                      {stat.value}
+                    </Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.7, mt: 0.5, display: 'block' }}>
+                      {stat.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </motion.div>
 
-            <div className="grid grid-cols-3 gap-4">
-              {trustIndicators.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.15 }}
-                  className="text-center"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-3">
-                    <item.icon size={20} className="text-white" />
-                  </div>
-                  <p className="text-xs font-medium text-white">{item.text}</p>
-                  <p className="text-xs text-blue-200 mt-1">{item.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+            >
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2.5 }}>
+                {trustIndicators.map((item, i) => (
+                  <Box key={i} sx={{ textAlign: 'center' }}>
+                    <Box
+                      sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 3,
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mx: 'auto',
+                        mb: 1.5,
+                      }}
+                    >
+                      <item.icon size={20} />
+                    </Box>
+                    <Typography variant="caption" fontWeight={600} sx={{ display: 'block', mb: 0.3 }}>
+                      {item.text}
+                    </Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.65, lineHeight: 1.4, display: 'block' }}>
+                      {item.desc}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </motion.div>
+          </Box>
+        </Box>
+      </Box>
 
       {/* Right Side — Login Card */}
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-12 bg-background">
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 3, sm: 4, md: 6 },
+          bgcolor: 'background.default',
+        }}
+      >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{ width: '100%', maxWidth: 440 }}
         >
           {/* Mobile logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <Logo size="lg" variant="full" animated={true} />
-          </div>
+          <Box sx={{ display: { xs: 'flex', lg: 'none' }, justifyContent: 'center', mb: 4 }}>
+            <Logo size="lg" variant="full" animated />
+          </Box>
 
-          <div className="clay-card p-8 sm:p-10 shadow-clay-lg border-border">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Shield size={24} className="text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold text-foreground">Welcome to Bharat Bhoomi</h2>
-              <p className="text-sm text-foreground-secondary mt-1.5">
+          <Card
+            elevation={0}
+            sx={{
+              p: { xs: 4, sm: 5 },
+              borderRadius: 5,
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 8px 32px rgba(0,0,0,0.35)'
+                : '8px 12px 32px rgba(30,111,255,0.06), 4px 6px 14px rgba(15,23,42,0.03)',
+            }}
+          >
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 3,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 3,
+                  boxShadow: '0 4px 14px rgba(30,111,255,0.2)',
+                }}
+              >
+                <Shield size={26} />
+              </Box>
+              <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.02em', mb: 1 }}>
+                Welcome to Bharat Bhoomi
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
                 Sign in to access the land acquisition platform
-              </p>
-            </div>
+              </Typography>
+            </Box>
 
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-5 p-3 rounded-xl bg-status-rejected/10 border border-status-rejected/30 text-status-rejected text-sm"
               >
-                {error}
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
+                  {error}
+                </Alert>
               </motion.div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Email / User ID
-                </label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@bharatbhoomi.gov.in"
-                    required
-                    className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-surface border border-border text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
+            <form onSubmit={handleSubmit}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <TextField
+                  label="Email / User ID"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@bharatbhoomi.gov.in"
+                  required
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Mail size={18} style={{ opacity: 0.5 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    className="w-full pl-11 pr-11 py-2.5 rounded-xl bg-surface border border-border text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                <TextField
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock size={18} style={{ opacity: 0.5 }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                          size="small"
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        sx={{ borderRadius: 1 }}
+                      />
+                    }
+                    label={<Typography variant="body2">Remember me</Typography>}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-tertiary hover:text-foreground transition-colors"
+                  <MuiLink
+                    href="#"
+                    underline="hover"
+                    variant="body2"
+                    sx={{ color: 'primary.main', fontWeight: 500 }}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
+                    Forgot password?
+                  </MuiLink>
+                </Box>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="accent-primary w-4 h-4 rounded focus:ring-2 focus:ring-primary/30"
-                  />
-                  <span className="text-sm text-foreground">Remember me</span>
-                </label>
-                <a href="#" className="text-sm text-primary hover:text-primaryHover transition-colors font-medium">
-                  Forgot password?
-                </a>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium bg-primary text-primaryFg hover:bg-primaryHover shadow-clay-btn hover:shadow-clay-btn-hover focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <svg className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <LogIn size={18} />
-                )}
-                {isLoading ? 'Signing in...' : 'Sign In'}
-              </button>
+                <Box
+                  component="button"
+                  type="submit"
+                  disabled={isLoading}
+                  sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1.5,
+                    py: 1.75,
+                    px: 3,
+                    borderRadius: 3,
+                    border: 'none',
+                    background: 'linear-gradient(145deg, #1e6fff, #1552d6)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(30,111,255,0.25)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      background: 'linear-gradient(145deg, #1552d6, #1e6fff)',
+                      boxShadow: '0 6px 20px rgba(30,111,255,0.35)',
+                      transform: 'translateY(-1px)',
+                    },
+                    '&:active': {
+                      transform: 'translateY(0)',
+                    },
+                    '&:disabled': {
+                      opacity: 0.6,
+                      cursor: 'not-allowed',
+                      transform: 'none',
+                    },
+                  }}
+                >
+                  {isLoading ? (
+                    <CircularProgress size={20} sx={{ color: 'white' }} />
+                  ) : (
+                    <LogIn size={20} />
+                  )}
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Box>
+              </Box>
             </form>
 
-            <div className="mt-6 pt-5 border-t border-border text-center">
-              <p className="text-xs text-foreground-secondary">
-                <Shield size={12} className="inline mr-1" />
-                Secure Government Platform — Audit-enabled system
-              </p>
-            </div>
-          </div>
+            <Box sx={{ mt: 4, pt: 3, borderTop: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`, textAlign: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, color: 'text.secondary' }}>
+                <Shield size={14} />
+                <Typography variant="caption">Secure Government Platform — Audit-enabled system</Typography>
+              </Box>
+            </Box>
+          </Card>
 
-          {/* Demo hint */}
-          <p className="text-center text-xs text-foreground-tertiary mt-4">
-            Demo: admin@bharatbhoomi.gov.in / admin123
-          </p>
-          <p className="text-center text-xs text-foreground-tertiary mt-2">
-            Also: proposal@gmail.com, authority@gmail.com, fieldoff@gmail.com
-          </p>
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography variant="caption" color="text.secondary">
+              Demo: admin@bharatbhoomi.gov.in / admin123
+            </Typography>
+            <br />
+            <Typography variant="caption" color="text.secondary">
+              Also: proposal@gmail.com, authority@gmail.com, fieldoff@gmail.com
+            </Typography>
+          </Box>
         </motion.div>
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 

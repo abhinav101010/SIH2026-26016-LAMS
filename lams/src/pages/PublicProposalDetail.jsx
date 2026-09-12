@@ -12,39 +12,51 @@ import {
 import { MapContainer, TileLayer, Polygon, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
-import ClayCard from '../components/ui/ClayCard'
 import ClayButton from '../components/ui/ClayButton'
-import { publicApi } from '../services'
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  Chip,
+  Grid,
+  alpha,
+  useTheme,
+} from '@mui/material'
 
 const INDIA_CENTER = [20.5937, 78.9629]
 
 const statusConfig = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700' },
-  SUBMITTED: { label: 'Submitted', color: 'bg-blue-100 text-blue-700' },
-  FIELD_VERIFICATION: { label: 'Field Verification', color: 'bg-yellow-100 text-yellow-700' },
-  UNDER_REVIEW: { label: 'Under Review', color: 'bg-orange-100 text-orange-700' },
-  APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
-  CHANGES_REQUESTED: { label: 'Changes Requested', color: 'bg-purple-100 text-purple-700' },
-  NOTIFICATION_ISSUED: { label: 'Notification Issued', color: 'bg-indigo-100 text-indigo-700' },
-  AWARD_DECLARED: { label: 'Award Declared', color: 'bg-teal-100 text-teal-700' },
-  COMPENSATION: { label: 'Compensation', color: 'bg-pink-100 text-pink-700' },
-  ACQUIRED: { label: 'Acquired', color: 'bg-emerald-100 text-emerald-700' },
-  POSSESSION: { label: 'Possession', color: 'bg-cyan-100 text-cyan-700' },
+  DRAFT: { label: 'Draft', color: 'default' },
+  SUBMITTED: { label: 'Submitted', color: 'info' },
+  FIELD_VERIFICATION: { label: 'Field Verification', color: 'warning' },
+  UNDER_REVIEW: { label: 'Under Review', color: 'primary' },
+  APPROVED: { label: 'Approved', color: 'success' },
+  REJECTED: { label: 'Rejected', color: 'error' },
+  CHANGES_REQUESTED: { label: 'Changes Requested', color: 'secondary' },
+  NOTIFICATION_ISSUED: { label: 'Notification Issued', color: 'info' },
+  AWARD_DECLARED: { label: 'Award Declared', color: 'success' },
+  COMPENSATION: { label: 'Compensation', color: 'secondary' },
+  ACQUIRED: { label: 'Acquired', color: 'success' },
+  POSSESSION: { label: 'Possession', color: 'info' },
 }
 
 const PublicProposalDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [proposal, setProposal] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    publicApi.getProposalById(id).then((res) => {
-      setProposal(res.data)
-      setLoading(false)
-    }).catch(() => {
-      setLoading(false)
+    import('../services').then(({ publicApi }) => {
+      publicApi.getProposalById(id).then((res) => {
+        setProposal(res.data)
+        setLoading(false)
+      }).catch(() => {
+        setLoading(false)
+      })
     })
   }, [id])
 
@@ -61,168 +73,148 @@ const PublicProposalDetail = () => {
 
   const geo = proposal ? getGeometry(proposal) : null
 
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const subtleBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.01)'
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-text-secondary">Loading proposal...</p>
-        </div>
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Box sx={{ width: 48, height: 48, border: `4px solid ${theme.palette.primary.main}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+          <Typography variant="body2" color="text.secondary">Loading proposal...</Typography>
+        </Box>
+      </Box>
     )
   }
 
   if (!proposal) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-lg font-semibold text-foreground mb-2">Proposal Not Found</p>
-          <p className="text-sm text-text-secondary mb-4">The proposal you are looking for does not exist or is not public.</p>
-          <ClayButton onClick={() => navigate('/')}>
-            <ArrowLeft size={16} className="mr-2" />
-            Back to Explorer
-          </ClayButton>
-        </div>
-      </div>
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Proposal Not Found</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>The proposal you are looking for does not exist or is not public.</Typography>
+          <ClayButton onClick={() => navigate('/')} icon={ArrowLeft}>Back to Explorer</ClayButton>
+        </Box>
+      </Box>
     )
   }
 
-  const status = statusConfig[proposal.status] || { label: proposal.status, color: 'bg-gray-100 text-gray-700' }
+  const status = statusConfig[proposal.status] || { label: proposal.status, color: 'default' }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <ClayButton variant="ghost" size="sm" onClick={() => navigate('/')}>
-            <ArrowLeft size={16} />
-          </ClayButton>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">Bharat Bhoomi</h1>
-            <p className="text-xs text-text-secondary">Public Proposal Explorer</p>
-          </div>
-        </div>
-        <ClayButton variant="outline" size="sm" onClick={() => navigate('/login')}>
-          Admin Login
-        </ClayButton>
-      </header>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ bgcolor: 'background.paper', borderBottom: `1px solid ${borderColor}`, px: 3, py: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <ClayButton variant="ghost" size="sm" onClick={() => navigate('/')} icon={ArrowLeft} />
+          <Box>
+            <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1.3 }}>Bharat Bhoomi</Typography>
+            <Typography variant="caption" color="text.secondary">Public Proposal Explorer</Typography>
+          </Box>
+        </Box>
+        <Button variant="outlined" size="small" onClick={() => navigate('/login')} sx={{ borderRadius: 2 }}>Admin Login</Button>
+      </Box>
 
-      <main className="max-w-5xl mx-auto p-4 space-y-4">
-        <ClayCard className="p-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-foreground">{proposal.projectName}</h2>
-              <p className="text-sm text-text-secondary">{proposal.proposalNumber}</p>
-            </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>
-              {status.label}
-            </span>
-          </div>
+      <Box sx={{ maxWidth: '1200px', mx: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+          <Box sx={{ p: 3, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+            <Box>
+              <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>{proposal.projectName}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontFamily: 'mono', fontSize: '0.8125rem' }}>{proposal.proposalNumber}</Typography>
+            </Box>
+            <Chip label={status.label} color={status.color} size="small" sx={{ borderRadius: 2, fontWeight: 600 }} />
+          </Box>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-text-tertiary uppercase tracking-wide">Department</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Building2 size={14} className="text-text-secondary" />
-                  <span className="text-sm text-foreground">{proposal.department}</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-text-tertiary uppercase tracking-wide">Location</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <MapPin size={14} className="text-text-secondary" />
-                  <span className="text-sm text-foreground">{proposal.district}, {proposal.state}</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-text-tertiary uppercase tracking-wide">Project Type</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Globe size={14} className="text-text-secondary" />
-                  <span className="text-sm text-foreground">{proposal.projectType}</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-text-tertiary uppercase tracking-wide">Land Area</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <FileText size={14} className="text-text-secondary" />
-                  <span className="text-sm text-foreground">{proposal.totalLandRequired} acres</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-text-tertiary uppercase tracking-wide">Affected Families</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Users size={14} className="text-text-secondary" />
-                  <span className="text-sm text-foreground">{proposal.affectedFamilies}</span>
-                </div>
-              </div>
-
-              {proposal.targetCompletion && (
-                <div>
-                  <p className="text-xs text-text-tertiary uppercase tracking-wide">Target Completion</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Calendar size={14} className="text-text-secondary" />
-                    <span className="text-sm text-foreground">{new Date(proposal.targetCompletion).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <p className="text-xs text-text-tertiary uppercase tracking-wide mb-2">Purpose</p>
-              <p className="text-sm text-foreground leading-relaxed">{proposal.purpose}</p>
-
-              {proposal.description && (
-                <>
-                  <p className="text-xs text-text-tertiary uppercase tracking-wide mt-4 mb-1">Description</p>
-                  <p className="text-sm text-foreground leading-relaxed">{proposal.description}</p>
-                </>
-              )}
-
-              <p className="text-xs text-text-tertiary mt-4">
-                Last updated: {new Date(proposal.updatedAt).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </ClayCard>
+          <Box sx={{ p: 3, pt: 0 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Building2 size={16} style={{ color: theme.palette.text.secondary }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Department</Typography>
+                      <Typography variant="body2" fontWeight={500}>{proposal.department}</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <MapPin size={16} style={{ color: theme.palette.text.secondary }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Location</Typography>
+                      <Typography variant="body2" fontWeight={500}>{proposal.district}, {proposal.state}</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Globe size={16} style={{ color: theme.palette.text.secondary }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Project Type</Typography>
+                      <Typography variant="body2" fontWeight={500}>{proposal.projectType}</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <FileText size={16} style={{ color: theme.palette.text.secondary }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Land Area</Typography>
+                      <Typography variant="body2" fontWeight={500}>{proposal.totalLandRequired} acres</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Users size={16} style={{ color: theme.palette.text.secondary }} />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Affected Families</Typography>
+                      <Typography variant="body2" fontWeight={500}>{proposal.affectedFamilies}</Typography>
+                    </Box>
+                  </Box>
+                  {proposal.targetCompletion && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Calendar size={16} style={{ color: theme.palette.text.secondary }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Target Completion</Typography>
+                        <Typography variant="body2" fontWeight={500}>{new Date(proposal.targetCompletion).toLocaleDateString()}</Typography>
+                      </Box>
+                    </Box>
+                  )}
+                </Box>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Purpose</Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5, lineHeight: 1.6 }}>{proposal.purpose}</Typography>
+                  </Box>
+                  {proposal.description && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.6875rem' }}>Description</Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5, lineHeight: 1.6 }}>{proposal.description}</Typography>
+                    </Box>
+                  )}
+                  <Typography variant="caption" color="text.secondary">
+                    Last updated: {new Date(proposal.updatedAt).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        </Card>
 
         {geo && (
-          <ClayCard className="p-4">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Location Map</h3>
-            <div className="rounded-xl overflow-hidden border border-border" style={{ height: '400px' }}>
-              <MapContainer
-                center={INDIA_CENTER}
-                zoom={5}
-                className="w-full h-full"
-                scrollWheelZoom
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; OpenStreetMap'
-                />
+          <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
+            <Box sx={{ p: 3, pb: 2 }}>
+              <Typography variant="subtitle2" fontWeight={700}>Location Map</Typography>
+            </Box>
+            <Box sx={{ height: 400, overflow: 'hidden' }}>
+              <MapContainer center={INDIA_CENTER} zoom={5} style={{ width: '100%', height: '100%' }} scrollWheelZoom>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
                 {geo.type === 'Polygon' && (
-                  <Polygon
-                    positions={geo.coordinates[0].map((c) => [c[1], c[0]])}
-                    pathOptions={{
-                      color: '#2563eb',
-                      fillColor: '#3b82f6',
-                      fillOpacity: 0.3,
-                      weight: 3,
-                    }}
-                  />
+                  <Polygon positions={geo.coordinates[0].map((c) => [c[1], c[0]])} pathOptions={{ color: '#1e6fff', fillColor: '#60a5fa', fillOpacity: 0.3, weight: 3 }} />
                 )}
                 {geo.type === 'Point' && (
                   <Marker position={[geo.coordinates[1], geo.coordinates[0]]} />
                 )}
               </MapContainer>
-            </div>
-          </ClayCard>
+            </Box>
+          </Card>
         )}
-      </main>
-    </div>
+      </Box>
+    </Box>
   )
 }
 

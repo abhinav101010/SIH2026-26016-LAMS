@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import {
   User,
   Lock,
@@ -15,14 +14,29 @@ import {
 import { useAuth } from '../auth/AuthContext'
 import { authApi } from '../services'
 import { formatDate } from '../utils/formatters'
-import ClayCard from '../components/ui/ClayCard'
 import ClayButton from '../components/ui/ClayButton'
-import ClayInput from '../components/ui/ClayInput'
-import ClaySwitch from '../components/ui/ClaySwitch'
-import ClayRadio from '../components/ui/ClayRadio'
+import {
+  Box,
+  Card,
+  Typography,
+  Tabs,
+  Tab,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  Button,
+  IconButton,
+  alpha,
+  useTheme,
+} from '@mui/material'
 
 const SettingsPage = () => {
   const { user } = useAuth()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [activeTab, setActiveTab] = useState('profile')
   const [notifications, setNotifications] = useState({
     email: true,
@@ -51,65 +65,56 @@ const SettingsPage = () => {
     { id: 'audit', label: 'Audit & Logs', icon: Shield },
   ]
 
-  return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Shield size={20} className="text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-          <p className="text-text-secondary text-sm mt-1">Manage your account and platform preferences</p>
-        </div>
-      </div>
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
-      <div className="flex flex-col sm:flex-row gap-2">
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: '1200px' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ width: 40, height: 40, borderRadius: 3, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.contrastText' }}>
+          <Shield size={20} />
+        </Box>
+        <Box>
+          <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>Settings</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Manage your account and platform preferences</Typography>
+        </Box>
+      </Box>
+
+      <Tabs
+        value={activeTab}
+        onChange={(_, v) => setActiveTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{
+          borderBottom: `1px solid ${borderColor}`,
+          '& .MuiTab-root': { textTransform: 'none', fontWeight: 500, gap: 1, minHeight: 48 },
+          '& .Mui-selected': { fontWeight: 600, color: 'primary.main' },
+          '& .MuiTabs-indicator': { height: 3, borderRadius: 3 },
+        }}
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon
-          const active = activeTab === tab.id
           return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
-                transition-all duration-200
-                ${active
-                  ? 'bg-primary/10 text-primary border border-primary/20'
-                  : 'bg-card border border-border text-text-secondary hover:text-foreground hover:bg-neutral-50 dark:hover:bg-neutral-800'}
-              `}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
+            <Tab key={tab.id} value={tab.id} icon={<Icon size={16} />} label={tab.label} />
           )
         })}
-      </div>
+      </Tabs>
 
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3 }}
-      >
-        {activeTab === 'profile' && (
-          <ProfileSettings user={user} />
-        )}
-        {activeTab === 'security' && <SecuritySettings />}
+      <Box>
+        {activeTab === 'profile' && <ProfileSettings user={user} borderColor={borderColor} isDark={isDark} />}
+        {activeTab === 'security' && <SecuritySettings borderColor={borderColor} isDark={isDark} />}
         {activeTab === 'notifications' && (
-          <NotificationSettings notifications={notifications} setNotifications={setNotifications} />
+          <NotificationSettings notifications={notifications} setNotifications={setNotifications} borderColor={borderColor} isDark={isDark} />
         )}
         {activeTab === 'preferences' && (
-          <PreferencesSettings settings={settings} setSettings={setSettings} />
+          <PreferencesSettings settings={settings} setSettings={setSettings} borderColor={borderColor} isDark={isDark} />
         )}
-        {activeTab === 'audit' && <AuditSettings />}
-      </motion.div>
-    </div>
+        {activeTab === 'audit' && <AuditSettings borderColor={borderColor} isDark={isDark} />}
+      </Box>
+    </Box>
   )
 }
 
-function ProfileSettings({ user }) {
+function ProfileSettings({ user, borderColor, isDark }) {
   const [profile, setProfile] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -124,7 +129,7 @@ function ProfileSettings({ user }) {
     setSaving(true)
     setMessage(null)
     try {
-      const res = await authApi.updateProfile(profile)
+      await authApi.updateProfile(profile)
       setMessage({ type: 'success', text: 'Profile updated successfully' })
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update profile' })
@@ -134,344 +139,291 @@ function ProfileSettings({ user }) {
   }
 
   return (
-    <div className="space-y-6">
-      <ClayCard className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Profile Information</h2>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Profile Information</Typography>
 
-        <div className="flex items-center gap-6 mb-6">
-          <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-              <User size={32} />
-            </div>
-            <button className="absolute bottom-0 right-0 w-7 h-7 rounded-lg bg-info/10 text-info border border-border flex items-center justify-center hover:bg-info/20 transition">
-              <Camera size={14} />
-            </button>
-          </div>
-          <div>
-            <p className="font-medium text-foreground">{profile.name}</p>
-            <p className="text-sm text-text-secondary">{profile.employeeId}</p>
-            <p className="text-xs text-text-tertiary mt-1">Joined: {user?.joinedDate ? formatDate(user.joinedDate) : '-'}</p>
-          </div>
-        </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4 }}>
+            <Box sx={{ position: 'relative' }}>
+              <Box sx={{ width: 80, height: 80, borderRadius: 4, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.contrastText' }}>
+                <User size={32} />
+              </Box>
+              <IconButton size="small" sx={{ position: 'absolute', bottom: 0, right: 0, bgcolor: 'background.paper', border: `1px solid ${borderColor}`, '&:hover': { bgcolor: 'action.hover' } }}>
+                <Camera size={14} />
+              </IconButton>
+            </Box>
+            <Box>
+              <Typography variant="body1" fontWeight={600}>{profile.name}</Typography>
+              <Typography variant="body2" color="text.secondary">{profile.employeeId}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>Joined: {user?.joinedDate ? formatDate(user.joinedDate) : '-'}</Typography>
+            </Box>
+          </Box>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ClayInput
-            label="Full Name"
-            value={profile.name}
-            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-          />
-          <ClayInput
-            label="Email Address"
-            type="email"
-            value={profile.email}
-            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-          />
-          <ClayInput
-            label="Phone Number"
-            value={profile.phone}
-            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-          />
-          <ClayInput
-            label="Department"
-            value={profile.department}
-            onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-          />
-          <div className="md:col-span-2">
-            <ClayInput
-              label="Employee ID"
-              value={profile.employeeId}
-              onChange={(e) => setProfile({ ...profile, employeeId: e.target.value })}
-            />
-          </div>
-        </div>
-      </ClayCard>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <TextField label="Full Name" fullWidth size="small" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <TextField label="Email Address" type="email" fullWidth size="small" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <TextField label="Phone Number" fullWidth size="small" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <TextField label="Department" fullWidth size="small" value={profile.department} onChange={(e) => setProfile({ ...profile, department: e.target.value })} />
+              </Box>
+            </Box>
+            <Box sx={{ maxWidth: 480 }}>
+              <TextField label="Employee ID" fullWidth size="small" value={profile.employeeId} onChange={(e) => setProfile({ ...profile, employeeId: e.target.value })} />
+            </Box>
+          </Box>
+        </Box>
+      </Card>
 
       {message && (
-        <div className={`flex items-center gap-2 p-3 rounded-xl text-sm ${message.type === 'success' ? 'bg-status-approved/10 text-status-approved border border-status-approved/30' : 'bg-status-rejected/10 text-status-rejected border border-status-rejected/30'}`}>
-          {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-          {message.text}
-        </div>
+        <Card elevation={0} sx={{ borderRadius: 3, border: `1px solid ${message.type === 'success' ? theme.palette.success.main : theme.palette.error.main}33`, bgcolor: message.type === 'success' ? alpha(theme.palette.success.main, 0.06) : alpha(theme.palette.error.main, 0.06) }}>
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {message.type === 'success' ? <CheckCircle size={18} style={{ color: theme.palette.success.main }} /> : <AlertCircle size={18} style={{ color: theme.palette.error.main }} />}
+            <Typography variant="body2" sx={{ color: message.type === 'success' ? 'success.main' : 'error.main' }}>{message.text}</Typography>
+          </Box>
+        </Card>
       )}
 
-      <div className="flex justify-end">
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
         <ClayButton variant="primary" icon={Save} onClick={handleSave} disabled={saving}>
           {saving ? 'Saving...' : 'Save Changes'}
         </ClayButton>
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 
-function SecuritySettings() {
+function SecuritySettings({ borderColor, isDark }) {
   return (
-    <div className="space-y-6">
-      <ClayCard className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Password & Security</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Lock size={20} className="text-text-secondary" />
-              <div>
-                <p className="font-medium text-foreground">Change Password</p>
-                <p className="text-xs text-text-tertiary">Update your account password</p>
-              </div>
-            </div>
-            <ClayButton variant="outline" size="sm">
-              Change
-            </ClayButton>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Shield size={20} className="text-text-secondary" />
-              <div>
-                <p className="font-medium text-foreground">Two-Factor Authentication</p>
-                <p className="text-xs text-text-tertiary">Add an extra layer of security</p>
-              </div>
-            </div>
-            <ClaySwitch label="" checked={true} onChange={() => {}} />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl">
-            <div className="flex items-center gap-3">
-              <Bell size={20} className="text-text-secondary" />
-              <div>
-                <p className="font-medium text-foreground">Session Timeout</p>
-                <p className="text-xs text-text-tertiary">Auto-logout after 30 minutes of inactivity</p>
-              </div>
-            </div>
-            <ClayButton variant="outline" size="sm">
-              Configure
-            </ClayButton>
-          </div>
-        </div>
-      </ClayCard>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Password & Security</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {[
+              { icon: Lock, title: 'Change Password', desc: 'Update your account password', action: 'Change' },
+              { icon: Shield, title: 'Two-Factor Authentication', desc: 'Add an extra layer of security', action: null, switch: true },
+              { icon: Bell, title: 'Session Timeout', desc: 'Auto-logout after 30 minutes of inactivity', action: 'Configure' },
+            ].map((item) => (
+              <Box key={item.title} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderRadius: 3, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', border: `1px solid ${borderColor}` }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+                    <item.icon size={20} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>{item.title}</Typography>
+                    <Typography variant="caption" color="text.secondary">{item.desc}</Typography>
+                  </Box>
+                </Box>
+                {item.switch ? (
+                  <Switch size="small" defaultChecked />
+                ) : (
+                  <Button variant="outlined" size="small" sx={{ borderRadius: 2 }}>{item.action}</Button>
+                )}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Card>
 
-      <div className="flex justify-end">
-        <ClayButton variant="primary" icon={Save}>
-          Save Changes
-        </ClayButton>
-      </div>
-    </div>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <ClayButton variant="primary" icon={Save}>Save Changes</ClayButton>
+      </Box>
+    </Box>
   )
 }
 
-function NotificationSettings({ notifications, setNotifications }) {
+function NotificationSettings({ notifications, setNotifications, borderColor, isDark }) {
   const handleToggle = (key) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
   return (
-    <div className="space-y-6">
-      <ClayCard className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Notification Preferences</h2>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Notification Preferences</Typography>
 
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-foreground mb-3">Channels</h3>
-            <div className="space-y-3">
-              <ClaySwitch
-                label="Email notifications"
-                description="Receive notifications via email"
-                checked={notifications.email}
-                onChange={() => handleToggle('email')}
-              />
-              <ClaySwitch
-                label="Push notifications"
-                description="Receive push notifications on mobile"
-                checked={notifications.push}
-                onChange={() => handleToggle('push')}
-              />
-              <ClaySwitch
-                label="Desktop notifications"
-                description="Receive notifications on desktop"
-                checked={notifications.desktop}
-                onChange={() => handleToggle('desktop')}
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-border pt-4">
-            <h3 className="text-sm font-medium text-foreground mb-3">Event Types</h3>
-            <div className="space-y-3">
-              <ClaySwitch
-                label="Proposal updates"
-                description="Status changes on proposals you manage"
-                checked={notifications.proposals}
-                onChange={() => handleToggle('proposals')}
-              />
-              <ClaySwitch
-                label="Compensation updates"
-                description="Compensation disbursement notifications"
-                checked={notifications.compensation}
-                onChange={() => handleToggle('compensation')}
-              />
-              <ClaySwitch
-                label="Deadline reminders"
-                description="Upcoming deadlines and due dates"
-                checked={notifications.deadlines}
-                onChange={() => handleToggle('deadlines')}
-              />
-              <ClaySwitch
-                label="System notifications"
-                description="Maintenance and system-wide updates"
-                checked={notifications.system}
-                onChange={() => handleToggle('system')}
-              />
-            </div>
-          </div>
-        </div>
-      </ClayCard>
-
-      <div className="flex justify-end">
-        <ClayButton variant="primary" icon={Save}>
-          Save Preferences
-        </ClayButton>
-      </div>
-    </div>
-  )
-}
-
-function PreferencesSettings({ settings, setSettings }) {
-  return (
-    <div className="space-y-6">
-      <ClayCard className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Application Preferences</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Theme</label>
-            <div className="space-y-2">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>Channels</Typography>
               {[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-                { value: 'system', label: 'System' },
-              ].map((opt) => (
-                <ClayRadio
-                  key={opt.value}
-                  label={opt.label}
-                  value={opt.value}
-                  checked={settings.theme === opt.value}
-                  onChange={() => setSettings((s) => ({ ...s, theme: opt.value }))}
-                />
+                { key: 'email', label: 'Email notifications', desc: 'Receive notifications via email' },
+                { key: 'push', label: 'Push notifications', desc: 'Receive push notifications on mobile' },
+                { key: 'desktop', label: 'Desktop notifications', desc: 'Receive notifications on desktop' },
+              ].map((item) => (
+                <Box key={item.key} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1 }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={500}>{item.label}</Typography>
+                    <Typography variant="caption" color="text.secondary">{item.desc}</Typography>
+                  </Box>
+                  <Switch size="small" checked={notifications[item.key]} onChange={() => handleToggle(item.key)} />
+                </Box>
               ))}
-            </div>
-          </div>
+            </Box>
 
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Language</label>
-            <select
-              value={settings.language}
-              onChange={(e) => setSettings((s) => ({ ...s, language: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-surface border border-border text-foreground text-sm focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="en">English</option>
-              <option value="hi">हिन्दी (Hindi)</option>
-              <option value="ta">தமிழ் (Tamil)</option>
-              <option value="te">తెలుగు (Telugu)</option>
-              <option value="bn">বাংলা (Bengali)</option>
-              <option value="mr">मराठी (Marathi)</option>
-              <option value="gu">ગુજરાતી (Gujarati)</option>
-              <option value="kn">ಕನ್ನಡ (Kannada)</option>
-              <option value="ml">മലയാളം (Malayalam)</option>
-            </select>
-          </div>
+            <Box sx={{ borderTop: `1px solid ${borderColor}`, pt: 2.5 }}>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>Event Types</Typography>
+              {[
+                { key: 'proposals', label: 'Proposal updates', desc: 'Status changes on proposals you manage' },
+                { key: 'compensation', label: 'Compensation updates', desc: 'Compensation disbursement notifications' },
+                { key: 'deadlines', label: 'Deadline reminders', desc: 'Upcoming deadlines and due dates' },
+                { key: 'system', label: 'System notifications', desc: 'Maintenance and system-wide updates' },
+              ].map((item) => (
+                <Box key={item.key} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1 }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={500}>{item.label}</Typography>
+                    <Typography variant="caption" color="text.secondary">{item.desc}</Typography>
+                  </Box>
+                  <Switch size="small" checked={notifications[item.key]} onChange={() => handleToggle(item.key)} />
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        </Box>
+      </Card>
 
-          <div>
-            <ClayInput
-              label="Date Format"
-              value={settings.dateFormat}
-              onChange={(e) => setSettings((s) => ({ ...s, dateFormat: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Timezone</label>
-            <select
-              value={settings.timezone}
-              onChange={(e) => setSettings((s) => ({ ...s, timezone: e.target.value }))}
-              className="w-full px-3 py-2 rounded-xl bg-surface border border-border text-foreground text-sm focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-              <option value="Asia/Dubai">Asia/Dubai (GST)</option>
-              <option value="UTC">UTC</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-6 pt-6 border-t border-border">
-          <ClaySwitch
-            label="Auto-refresh dashboard"
-            description="Automatically refresh data every 5 minutes"
-            checked={settings.autoRefresh}
-            onChange={() => setSettings((s) => ({ ...s, autoRefresh: !s.autoRefresh }))}
-          />
-        </div>
-      </ClayCard>
-
-      <div className="flex justify-end">
-        <ClayButton variant="primary" icon={Save}>
-          Save Preferences
-        </ClayButton>
-      </div>
-    </div>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <ClayButton variant="primary" icon={Save}>Save Preferences</ClayButton>
+      </Box>
+    </Box>
   )
 }
 
-function AuditSettings() {
+function PreferencesSettings({ settings, setSettings, borderColor, isDark }) {
   return (
-    <div className="space-y-6">
-      <ClayCard className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Audit Trail & Logs</h2>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Application Preferences</Typography>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border">
-            <div className="flex items-center gap-3">
-              <Shield size={20} className="text-text-secondary" />
-              <div>
-                <p className="font-medium text-foreground">Audit Trail Enabled</p>
-                <p className="text-xs text-text-tertiary">All actions are logged with timestamps</p>
-              </div>
-            </div>
-            <ClaySwitch label="" checked={true} onChange={() => {}} />
-          </div>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Theme</Typography>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Theme</InputLabel>
+                  <Select value={settings.theme} label="Theme" onChange={(e) => setSettings((s) => ({ ...s, theme: e.target.value }))}>
+                    <MenuItem value="light">Light</MenuItem>
+                    <MenuItem value="dark">Dark</MenuItem>
+                    <MenuItem value="system">System</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Language</Typography>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Language</InputLabel>
+                  <Select value={settings.language} label="Language" onChange={(e) => setSettings((s) => ({ ...s, language: e.target.value }))}>
+                    <MenuItem value="en">English</MenuItem>
+                    <MenuItem value="hi">हिन्दी (Hindi)</MenuItem>
+                    <MenuItem value="ta">தமிழ் (Tamil)</MenuItem>
+                    <MenuItem value="te">తెలుగు (Telugu)</MenuItem>
+                    <MenuItem value="bn">বাংলা (Bengali)</MenuItem>
+                    <MenuItem value="mr">मराठी (Marathi)</MenuItem>
+                    <MenuItem value="gu">ગુજરાતી (Gujarati)</MenuItem>
+                    <MenuItem value="kn">ಕನ್ನಡ (Kannada)</MenuItem>
+                    <MenuItem value="ml">മലയാളം (Malayalam)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <TextField label="Date Format" fullWidth size="small" value={settings.dateFormat} onChange={(e) => setSettings((s) => ({ ...s, dateFormat: e.target.value }))} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 240 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Timezone</InputLabel>
+                  <Select value={settings.timezone} label="Timezone" onChange={(e) => setSettings((s) => ({ ...s, timezone: e.target.value }))}>
+                    <MenuItem value="Asia/Kolkata">Asia/Kolkata (IST)</MenuItem>
+                    <MenuItem value="Asia/Dubai">Asia/Dubai (GST)</MenuItem>
+                    <MenuItem value="UTC">UTC</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            </Box>
 
-          <div className="border border-border rounded-xl p-4">
-            <h3 className="text-sm font-medium text-foreground mb-3">Download Audit Log</h3>
-            <div className="flex gap-3">
-              <ClayButton variant="outline" size="sm" icon={Download}>
-                Download (CSV)
-              </ClayButton>
-              <ClayButton variant="outline" size="sm" icon={Download}>
-                Download (PDF)
-              </ClayButton>
-            </div>
-          </div>
+            <Box sx={{ borderTop: `1px solid ${borderColor}`, pt: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>Auto-refresh dashboard</Typography>
+                  <Typography variant="caption" color="text.secondary">Automatically refresh data every 5 minutes</Typography>
+                </Box>
+                <Switch size="small" checked={settings.autoRefresh} onChange={() => setSettings((s) => ({ ...s, autoRefresh: !s.autoRefresh }))} />
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </Card>
 
-          <div className="border border-border rounded-xl p-4">
-            <h3 className="text-sm font-medium text-foreground mb-2">Recent Activity</h3>
-            <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-text-secondary">2026-08-31 14:32</span>
-                <span className="text-foreground ml-2">Logged in as Administrator</span>
-              </div>
-              <div>
-                <span className="text-text-secondary">2026-08-31 11:45</span>
-                <span className="text-foreground ml-2">Viewed proposal Bharat Bhoomi-2026-00124</span>
-              </div>
-              <div>
-                <span className="text-text-secondary">2026-08-31 09:15</span>
-                <span className="text-foreground ml-2">Updated land parcel status</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ClayCard>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <ClayButton variant="primary" icon={Save}>Save Preferences</ClayButton>
+      </Box>
+    </Box>
+  )
+}
 
-      <div className="flex justify-end">
-        <ClayButton variant="primary" icon={Save}>
-          Save Settings
-        </ClayButton>
-      </div>
-    </div>
+function AuditSettings({ borderColor, isDark }) {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Audit Trail & Logs</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, borderRadius: 3, border: `1px solid ${borderColor}` }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+                  <Shield size={20} />
+                </Box>
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>Audit Trail Enabled</Typography>
+                  <Typography variant="caption" color="text.secondary">All actions are logged with timestamps</Typography>
+                </Box>
+              </Box>
+              <Switch size="small" defaultChecked />
+            </Box>
+
+            <Box sx={{ border: `1px solid ${borderColor}`, borderRadius: 3, p: 2.5 }}>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>Download Audit Log</Typography>
+              <Box sx={{ display: 'flex', gap: 1.5 }}>
+                <ClayButton variant="outline" size="sm" icon={Download}>Download (CSV)</ClayButton>
+                <ClayButton variant="outline" size="sm" icon={Download}>Download (PDF)</ClayButton>
+              </Box>
+            </Box>
+
+            <Box sx={{ border: `1px solid ${borderColor}`, borderRadius: 3, p: 2.5 }}>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>Recent Activity</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {[
+                  { time: '2026-08-31 14:32', text: 'Logged in as Administrator' },
+                  { time: '2026-08-31 11:45', text: 'Viewed proposal Bharat Bhoomi-2026-00124' },
+                  { time: '2026-08-31 09:15', text: 'Updated land parcel status' },
+                ].map((item) => (
+                  <Box key={item.text} sx={{ display: 'flex', gap: 1.5, alignItems: 'baseline' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ minWidth: 120 }}>{item.time}</Typography>
+                    <Typography variant="caption">{item.text}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </Card>
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <ClayButton variant="primary" icon={Save}>Save Settings</ClayButton>
+      </Box>
+    </Box>
   )
 }
 

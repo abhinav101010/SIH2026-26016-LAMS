@@ -14,6 +14,21 @@ import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-l
 import ClayButton from '../components/ui/ClayButton'
 import { publicApi } from '../services'
 import { useNavigate } from 'react-router-dom'
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  TextField,
+  InputAdornment,
+  Button,
+  IconButton,
+  Card,
+  CardContent,
+  Typography,
+  Chip,
+  alpha,
+  useTheme,
+} from '@mui/material'
 
 const INDIA_CENTER = [20.5937, 78.9629]
 
@@ -24,7 +39,7 @@ const statusConfig = {
   UNDER_REVIEW: { label: 'Under Review', color: 'bg-orange-100 text-orange-700' },
   APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700' },
   REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
-  CHANGES_REQUESTED: { label: 'Changes Requested', color: 'bg-purple-100 text-purple-700' },
+  CHANGES_REQUESTED: { label: 'Changes Requested', color: 'bg-indigo-100 text-indigo-700' },
   NOTIFICATION_ISSUED: { label: 'Notification Issued', color: 'bg-indigo-100 text-indigo-700' },
   AWARD_DECLARED: { label: 'Award Declared', color: 'bg-teal-100 text-teal-700' },
   COMPENSATION: { label: 'Compensation', color: 'bg-pink-100 text-pink-700' },
@@ -168,102 +183,114 @@ const PublicProposals = () => {
 
   const hasActiveFilters = search || statusFilter || stateFilter || districtFilter || departmentFilter
 
+  const isDark = theme.palette.mode === 'dark'
+
   return (
-    <div className="h-screen flex flex-col">
-      <header className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Bharat Bhoomi</h1>
-          <p className="text-xs text-foreground-secondary">Bharat Bhoomi</p>
-        </div>
-        <nav className="flex items-center gap-4">
-          <span className="text-sm font-medium text-foreground">Explore Proposals</span>
-          <ClayButton variant="outline" size="sm" onClick={() => navigate('/login')}>
-            Admin Login
-          </ClayButton>
-        </nav>
-      </header>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          bgcolor: isDark ? 'rgba(17, 24, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+          color: 'text.primary',
+        }}
+      >
+        <Toolbar sx={{ justifyContent: 'space-between', minHeight: 56, px: { xs: 2, md: 3 } }}>
+          <Box>
+            <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}>Bharat Bhoomi</Typography>
+            <Typography variant="caption" color="text.secondary">National Land Acquisition Management System</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip label="Explore Proposals" size="small" sx={{ fontWeight: 600, fontSize: '0.8125rem', display: { xs: 'none', sm: 'flex' } }} />
+            <Button variant="outlined" size="small" onClick={() => navigate('/login')} sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 600 }}>Admin Login</Button>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-full md:w-[380px] lg:w-[420px] bg-surface border-r border-border flex flex-col">
-          <div className="p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Land Acquisition Proposals</h2>
-
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={16} />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-                placeholder="Search proposals..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-background border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-                className="px-2 py-1.5 rounded-lg bg-background border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">All Statuses</option>
-                {filters.statuses.map((s) => (
-                  <option key={s} value={s}>{statusConfig[s]?.label || s}</option>
-                ))}
-              </select>
-
-              <select
-                value={stateFilter}
-                onChange={(e) => { setStateFilter(e.target.value); setPage(1) }}
-                className="px-2 py-1.5 rounded-lg bg-background border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">All States</option>
-                {filters.states.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-
-              <select
-                value={districtFilter}
-                onChange={(e) => { setDistrictFilter(e.target.value); setPage(1) }}
-                className="px-2 py-1.5 rounded-lg bg-background border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">All Districts</option>
-                {filters.districts.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-
-              <select
-                value={departmentFilter}
-                onChange={(e) => { setDepartmentFilter(e.target.value); setPage(1) }}
-                className="px-2 py-1.5 rounded-lg bg-background border border-border text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">All Departments</option>
-                {filters.departments.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <Box
+          sx={{
+            width: { xs: '100%', md: 400, lg: 420 },
+            display: 'flex',
+            flexDirection: 'column',
+            bgcolor: 'background.paper',
+            borderRight: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+          }}
+        >
+          <Box sx={{ p: 2.5, borderBottom: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }}>
+            <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.01em', mb: 2 }}>Land Acquisition Proposals</Typography>
+            <TextField
+              placeholder="Search proposals..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search size={18} style={{ opacity: 0.5 }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select value={statusFilter} label="Status" onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
+                  <MenuItem value="">All Statuses</MenuItem>
+                  {filters.statuses.map((s) => (
+                    <MenuItem key={s} value={s}>{statusConfig[s]?.label || s}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" fullWidth>
+                <InputLabel>State</InputLabel>
+                <Select value={stateFilter} label="State" onChange={(e) => { setStateFilter(e.target.value); setPage(1) }}>
+                  <MenuItem value="">All States</MenuItem>
+                  {filters.states.map((s) => (
+                    <MenuItem key={s} value={s}>{s}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" fullWidth>
+                <InputLabel>District</InputLabel>
+                <Select value={districtFilter} label="District" onChange={(e) => { setDistrictFilter(e.target.value); setPage(1) }}>
+                  <MenuItem value="">All Districts</MenuItem>
+                  {filters.districts.map((d) => (
+                    <MenuItem key={d} value={d}>{d}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" fullWidth>
+                <InputLabel>Department</InputLabel>
+                <Select value={departmentFilter} label="Department" onChange={(e) => { setDepartmentFilter(e.target.value); setPage(1) }}>
+                  <MenuItem value="">All Departments</MenuItem>
+                  {filters.departments.map((d) => (
+                    <MenuItem key={d} value={d}>{d}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
             {hasActiveFilters && (
-              <button onClick={clearFilters} className="text-xs text-primary hover:underline flex items-center gap-1">
-                <X size={12} /> Clear filters
-              </button>
+              <Button variant="text" size="small" onClick={clearFilters} startIcon={<X size={14} />} sx={{ textTransform: 'none', px: 0, py: 0.5 }}>
+                Clear filters
+              </Button>
             )}
+          </Box>
 
-            <p className="text-xs text-text-tertiary mt-2">
-              {total} Public Proposal{total !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <Box sx={{ flex: 1, overflow: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             {loading ? (
-              <div className="text-center py-8 text-text-secondary text-sm">Loading proposals...</div>
+              <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                <Typography variant="body2">Loading proposals...</Typography>
+              </Box>
             ) : proposals.length === 0 ? (
-              <div className="text-center py-8 text-text-secondary text-sm">
-                <p>No proposals found</p>
-                <p className="text-xs mt-1">Try changing your search or filters.</p>
-              </div>
+              <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                <Typography variant="body2">No proposals found</Typography>
+                <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>Try changing your search or filters.</Typography>
+              </Box>
             ) : (
               proposals.map((proposal) => {
                 const isSelected = proposal.id === selectedId
@@ -274,63 +301,71 @@ const PublicProposals = () => {
                     key={proposal.id}
                     whileHover={{ scale: 1.01 }}
                     onClick={() => handleCardClick(proposal)}
-                    className={`cursor-pointer p-4 rounded-2xl border transition-all ${
-                      isSelected
-                        ? 'border-primary bg-primary/5 shadow-md'
-                        : 'border-border bg-surface hover:border-primary/30'
-                    }`}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-sm font-semibold text-foreground leading-tight">{proposal.projectName}</h3>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap ${status.color}`}>
-                        {status.label}
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-secondary mb-2">{proposal.proposalNumber}</p>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-xs text-text-secondary">
-                        <MapPin size={12} />
-                        {proposal.district}, {proposal.state}
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-text-secondary">
-                        <Building2 size={12} />
-                        {proposal.department}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 pt-2 border-t border-border">
-                      <span className="text-[10px] text-text-tertiary">
-                        {proposal.totalLandRequired} acres
-                      </span>
-                      <span className="text-[10px] text-text-tertiary">
-                        Updated {new Date(proposal.updatedAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <Card
+                      elevation={0}
+                      sx={{
+                        cursor: 'pointer',
+                        borderRadius: 3,
+                        border: (t) => `1px solid ${isSelected ? t.palette.primary.main : (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')}`,
+                        bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                        color: isSelected ? 'primary.contrastText' : 'text.primary',
+                        boxShadow: isSelected ? '0 4px 16px rgba(30,111,255,0.15)' : 'none',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          boxShadow: '0 2px 8px rgba(30,111,255,0.08)',
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ lineHeight: 1.3 }}>{proposal.projectName}</Typography>
+                          <Chip label={status.label} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem', flexShrink: 0 }} />
+                        </Box>
+                        <Typography variant="caption" color={isSelected ? 'rgba(255,255,255,0.8)' : 'text.secondary'} sx={{ display: 'block', mb: 1.5 }}>{proposal.proposalNumber}</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <MapPin size={12} color={isSelected ? 'rgba(255,255,255,0.7)' : undefined} />
+                            <Typography variant="caption" color={isSelected ? 'rgba(255,255,255,0.8)' : 'text.secondary'}>{proposal.district}, {proposal.state}</Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Building2 size={12} color={isSelected ? 'rgba(255,255,255,0.7)' : undefined} />
+                            <Typography variant="caption" color={isSelected ? 'rgba(255,255,255,0.8)' : 'text.secondary'}>{proposal.department}</Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1.5, pt: 1.5, borderTop: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}` }}>
+                          <Typography variant="caption" color={isSelected ? 'rgba(255,255,255,0.7)' : 'text.tertiary'}>{proposal.totalLandRequired} acres</Typography>
+                          <Typography variant="caption" color={isSelected ? 'rgba(255,255,255,0.7)' : 'text.tertiary'}>Updated {new Date(proposal.updatedAt).toLocaleDateString()}</Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 )
               })
             )}
-          </div>
+          </Box>
 
           {totalPages > 1 && (
-            <div className="p-3 border-t border-border flex items-center justify-between">
-              <ClayButton variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-                <ChevronLeft size={14} />
-              </ClayButton>
-              <span className="text-xs text-text-secondary">Page {page} of {totalPages}</span>
-              <ClayButton variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-                <ChevronRight size={14} />
-              </ClayButton>
-            </div>
+            <Box sx={{ p: 2, borderTop: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <IconButton size="small" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} sx={{ color: 'text.secondary' }}>
+                <ChevronLeft size={18} />
+              </IconButton>
+              <Typography variant="caption" color="text.secondary">Page {page} of {totalPages}</Typography>
+              <IconButton size="small" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} sx={{ color: 'text.secondary' }}>
+                <ChevronRight size={18} />
+              </IconButton>
+            </Box>
           )}
-        </aside>
+        </Box>
 
-        <main className="hidden md:flex flex-1 relative">
-          <div className="absolute inset-0">
+        <Box sx={{ flex: 1, position: 'relative', display: { xs: selectedProposal ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column' }}>
+          <Box sx={{ flex: 1, position: 'relative' }}>
             <MapContainer
               key={mapKey}
               center={INDIA_CENTER}
               zoom={5}
-              style={{ height: '100%', width: '100%', background: 'hsl(var(--color-surface))' }}
+              style={{ height: '100%', width: '100%' }}
               scrollWheelZoom
               zoomControl
             >
@@ -354,7 +389,7 @@ const PublicProposals = () => {
                       key={proposal.id}
                       positions={coords}
                       pathOptions={{
-                        color: isSelected ? '#2563eb' : '#64748b',
+                        color: isSelected ? '#1e6fff' : '#64748b',
                         fillColor: isSelected ? '#3b82f6' : '#94a3b8',
                         fillOpacity: isSelected ? 0.5 : 0.35,
                         weight: isSelected ? 3 : 2,
@@ -364,20 +399,24 @@ const PublicProposals = () => {
                       }}
                     >
                       <Popup>
-                        <div className="text-xs space-y-1">
-                          <p className="font-semibold">{proposal.projectName}</p>
-                          <p>{proposal.proposalNumber}</p>
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] ${status.color}`}>
-                            {status.label}
-                          </span>
-                          <p>{proposal.district}, {proposal.state}</p>
-                          <button
+                        <Box sx={{ p: 1, minWidth: 180 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>{proposal.projectName}</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>{proposal.proposalNumber}</Typography>
+                          <Chip label={status.label} size="small" sx={{ mb: 1 }} />
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                            <MapPin size={12} />
+                            <Typography variant="caption">{proposal.district}, {proposal.state}</Typography>
+                          </Box>
+                          <Button
+                            variant="text"
+                            size="small"
                             onClick={() => navigate(`/explore/${proposal.id}`)}
-                            className="text-primary hover:underline flex items-center gap-1"
+                            sx={{ mt: 1, textTransform: 'none', px: 0, py: 0.5 }}
+                            endIcon={<ExternalLink size={12} />}
                           >
-                            View Details <ExternalLink size={10} />
-                          </button>
-                        </div>
+                            View Details
+                          </Button>
+                        </Box>
                       </Popup>
                     </Polygon>
                   )
@@ -394,19 +433,20 @@ const PublicProposals = () => {
                       }}
                     >
                       <Popup>
-                        <div className="text-xs space-y-1">
-                          <p className="font-semibold">{proposal.projectName}</p>
-                          <p>{proposal.proposalNumber}</p>
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] ${status.color}`}>
-                            {status.label}
-                          </span>
-                          <button
+                        <Box sx={{ p: 1, minWidth: 180 }}>
+                          <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>{proposal.projectName}</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>{proposal.proposalNumber}</Typography>
+                          <Chip label={status.label} size="small" sx={{ mb: 1 }} />
+                          <Button
+                            variant="text"
+                            size="small"
                             onClick={() => navigate(`/explore/${proposal.id}`)}
-                            className="text-primary hover:underline flex items-center gap-1"
+                            sx={{ mt: 1, textTransform: 'none', px: 0, py: 0.5 }}
+                            endIcon={<ExternalLink size={12} />}
                           >
-                            View Details <ExternalLink size={10} />
-                          </button>
-                        </div>
+                            View Details
+                          </Button>
+                        </Box>
                       </Popup>
                     </Marker>
                   )
@@ -415,55 +455,74 @@ const PublicProposals = () => {
                 return null
               })}
             </MapContainer>
-          </div>
+          </Box>
 
           {selectedProposal && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute bottom-4 left-4 right-4 bg-surface/95 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-lg z-[1000]"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">{selectedProposal.projectName}</h3>
-                  <p className="text-xs text-text-secondary">{selectedProposal.proposalNumber}</p>
-                </div>
-                <button onClick={() => setSelectedId(null)} className="text-text-tertiary hover:text-foreground">
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-text-secondary">
-                <div className="flex items-center gap-1">
-                  <MapPin size={12} />
-                  {selectedProposal.district}, {selectedProposal.state}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Building2 size={12} />
-                  {selectedProposal.department}
-                </div>
-                <div className="flex items-center gap-1">
-                  <FileText size={12} />
-                  {selectedProposal.totalLandRequired} acres
-                </div>
-                <div>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] ${statusConfig[selectedProposal.status]?.color || 'bg-gray-100 text-gray-700'}`}>
-                    {statusConfig[selectedProposal.status]?.label || selectedProposal.status}
-                  </span>
-                </div>
-              </div>
-              <ClayButton
-                variant="primary"
-                size="sm"
-                className="w-full mt-3"
-                onClick={() => navigate(`/explore/${selectedProposal.id}`)}
+              <Card
+                elevation={0}
+                sx={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  zIndex: 1000,
+                  borderRadius: 4,
+                  border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+                  boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(30,111,255,0.08)',
+                }}
               >
-                View Details
-              </ClayButton>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>{selectedProposal.projectName}</Typography>
+                      <Typography variant="caption" color="text.secondary">{selectedProposal.proposalNumber}</Typography>
+                    </Box>
+                    <IconButton size="small" onClick={() => setSelectedId(null)} sx={{ color: 'text.secondary' }}>
+                      <X size={18} />
+                    </IconButton>
+                  </Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 2.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <MapPin size={14} color="text.secondary" />
+                      <Typography variant="caption" color="text.secondary">{selectedProposal.district}, {selectedProposal.state}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Building2 size={14} color="text.secondary" />
+                      <Typography variant="caption" color="text.secondary">{selectedProposal.department}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FileText size={14} color="text.secondary" />
+                      <Typography variant="caption" color="text.secondary">{selectedProposal.totalLandRequired} acres</Typography>
+                    </Box>
+                    <Box>
+                      <Chip
+                        label={statusConfig[selectedProposal.status]?.label || selectedProposal.status}
+                        size="small"
+                        sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                      />
+                    </Box>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    fullWidth
+                    onClick={() => navigate(`/explore/${selectedProposal.id}`)}
+                    sx={{ borderRadius: 2.5, textTransform: 'none', fontWeight: 600 }}
+                    endIcon={<ExternalLink size={14} />}
+                  >
+                    View Details
+                  </Button>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
-        </main>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 

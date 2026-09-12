@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Search, Plus, Edit3, Trash2, X } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import PermissionGate from '../auth/PermissionGate'
 import { departmentApi } from '../services'
 import { useToast } from '../components/ui/Toast'
-import ClayCard from '../components/ui/ClayCard'
 import ClayButton from '../components/ui/ClayButton'
 import ClayInput from '../components/ui/ClayInput'
-import ClaySelect from '../components/ui/ClaySelect'
 import ClayBadge from '../components/ui/ClayBadge'
-import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
 import { formatDate } from '../utils/formatters'
+import { Box, Card, Typography, TextField, FormControl, InputLabel, Select, MenuItem, IconButton, alpha, useTheme } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 
 const Departments = () => {
   const { hasPermission } = useAuth()
   const toast = useToast()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -24,6 +24,8 @@ const Departments = () => {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: '', code: '', description: '', isActive: true })
   const [search, setSearch] = useState('')
+
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   const fetchDepartments = async () => {
     setLoading(true)
@@ -90,98 +92,117 @@ const Departments = () => {
   }
 
   const columns = [
-    { key: 'name', header: 'Department', sortable: true },
-    { key: 'code', header: 'Code', sortable: true },
-    { key: 'description', header: 'Description', render: (v) => v || '-' },
+    { field: 'name', headerName: 'Department', flex: 2, minWidth: 180 },
+    { field: 'code', headerName: 'Code', flex: 1, minWidth: 100 },
     {
-      key: 'isActive',
-      header: 'Status',
-      render: (v) => (
-        <ClayBadge status={v ? 'success' : 'rejected'} size="sm">
-          {v ? 'Active' : 'Inactive'}
+      field: 'description',
+      headerName: 'Description',
+      flex: 2,
+      minWidth: 220,
+      renderCell: (params) => <Typography variant="body2" color="text.secondary">{params.value || '-'}</Typography>,
+    },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      flex: 1,
+      minWidth: 100,
+      renderCell: (params) => (
+        <ClayBadge status={params.value ? 'success' : 'rejected'} size="sm">
+          {params.value ? 'Active' : 'Inactive'}
         </ClayBadge>
       ),
     },
     {
-      key: 'createdAt',
-      header: 'Created',
-      render: (v) => formatDate(v),
+      field: 'createdAt',
+      headerName: 'Created',
+      flex: 1,
+      minWidth: 140,
+      renderCell: (params) => <Typography variant="body2" color="text.secondary">{formatDate(params.value)}</Typography>,
       sortable: true,
     },
     {
-      key: 'actions',
-      header: 'Actions',
-      render: (_, row) => (
-        <div className="flex items-center gap-1">
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      minWidth: 100,
+      sortable: false,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <PermissionGate permission="USERS_EDIT" fallback={<div />}>
-            <button
-              onClick={() => openEdit(row)}
-              className="p-1.5 rounded-lg hover:bg-surface text-text-secondary hover:text-foreground transition"
-            >
+            <IconButton size="small" onClick={() => openEdit(params.row)} sx={{ color: 'primary.main' }}>
               <Edit3 size={15} />
-            </button>
+            </IconButton>
           </PermissionGate>
           <PermissionGate permission="USERS_DELETE" fallback={<div />}>
-            <button
-              onClick={() => handleDelete(row)}
-              className="p-1.5 rounded-lg hover:bg-surface text-text-secondary hover:text-status-rejected transition"
-            >
+            <IconButton size="small" onClick={() => handleDelete(params.row)} sx={{ color: 'error.main' }}>
               <Trash2 size={15} />
-            </button>
+            </IconButton>
           </PermissionGate>
-        </div>
+        </Box>
       ),
     },
   ]
 
   if (!hasPermission('USERS_VIEW')) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">403</h1>
-          <p className="text-foreground-secondary">Access Denied</p>
-          <p className="text-sm text-foreground-secondary mt-2">You do not have permission to view departments.</p>
-        </div>
-      </div>
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>403</Typography>
+          <Typography variant="body2" color="text.secondary">Access Denied</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>You do not have permission to view departments.</Typography>
+        </Box>
+      </Box>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Departments</h1>
-          <p className="text-sm text-text-secondary mt-1">Manage departments</p>
-        </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>Departments</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Manage departments</Typography>
+        </Box>
         <PermissionGate permission="USERS_CREATE" fallback={<div />}>
           <ClayButton variant="primary" size="sm" icon={Plus} onClick={openCreate}>
             Add Department
           </ClayButton>
         </PermissionGate>
-      </div>
+      </Box>
 
-      <ClayCard>
-        <div className="mb-4">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
-            <input
-              type="text"
+      <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
+        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ position: 'relative', maxWidth: 320 }}>
+            <Search size={16} sx={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'text.secondary' }} />
+            <TextField
               placeholder="Search departments..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-surface border border-border text-foreground placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              size="small"
+              fullWidth
+              InputProps={{
+                startAdornment: <Search size={16} style={{ marginRight: 8, opacity: 0.5 }} />,
+              }}
             />
-          </div>
-        </div>
+          </Box>
 
-        <DataTable
-          columns={columns}
-          data={departments}
-          searchable={false}
-          pagination={false}
-          emptyMessage={loading ? 'Loading...' : 'No departments found'}
-        />
-      </ClayCard>
+          <Box sx={{ height: 520, width: '100%' }}>
+            <DataGrid
+              rows={departments}
+              columns={columns}
+              loading={loading}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              sx={{
+                border: 'none',
+                borderRadius: 0,
+                '& .MuiDataGrid-cell': { borderColor: borderColor },
+                '& .MuiDataGrid-columnHeaders': { borderColor: borderColor, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' },
+                '& .MuiDataGrid-footerContainer': { borderColor: borderColor },
+              }}
+            />
+          </Box>
+        </Box>
+      </Card>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingDept ? 'Edit Department' : 'Add Department'} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -205,25 +226,24 @@ const Departments = () => {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Enter description (optional)"
           />
-          <ClaySelect
-            label="Status"
-            value={form.isActive ? 'true' : 'false'}
-            onChange={(e) => setForm({ ...form, isActive: e.target.value === 'true' })}
-          >
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </ClaySelect>
-          <div className="flex justify-end gap-3 pt-4">
-            <ClayButton variant="outline" type="button" onClick={() => setShowModal(false)}>
-              Cancel
-            </ClayButton>
-            <ClayButton type="submit" loading={saving}>
-              {editingDept ? 'Update' : 'Create'}
-            </ClayButton>
-          </div>
+          <FormControl fullWidth size="small">
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={form.isActive ? 'true' : 'false'}
+              label="Status"
+              onChange={(e) => setForm({ ...form, isActive: e.target.value === 'true' })}
+            >
+              <MenuItem value="true">Active</MenuItem>
+              <MenuItem value="false">Inactive</MenuItem>
+            </Select>
+          </FormControl>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, pt: 1 }}>
+            <ClayButton variant="outline" onClick={() => setShowModal(false)}>Cancel</ClayButton>
+            <ClayButton type="submit" loading={saving}>{editingDept ? 'Update' : 'Create'}</ClayButton>
+          </Box>
         </form>
       </Modal>
-    </div>
+    </Box>
   )
 }
 

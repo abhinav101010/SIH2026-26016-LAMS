@@ -9,19 +9,38 @@ import {
   CheckCircle,
   Users as UsersIcon,
   RefreshCw,
+  ArrowUpRight,
+  Minus,
 } from 'lucide-react'
-
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  LinearProgress,
+  IconButton,
+  Avatar,
+  useTheme,
+  alpha,
+} from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 import KPICard from '../components/dashboard/KPICard'
 import ChartCard from '../components/ui/ChartCard'
 import AcquisitionProgressChart from '../components/charts/AcquisitionProgressChart'
 import StateProgressChart from '../components/charts/StateProgressChart'
 import AcquisitionStatusChart from '../components/charts/AcquisitionStatusChart'
 import TimelineAdherenceChart from '../components/charts/TimelineAdherenceChart'
-import ClayCard from '../components/ui/ClayCard'
-import ClayButton from '../components/ui/ClayButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import { SkeletonChart } from '../components/ui/Skeleton'
-
 import {
   dashboardApi,
   proposalApi,
@@ -35,6 +54,8 @@ const fadeInUp = {
 }
 
 const Dashboard = () => {
+  const theme = useTheme()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [overview, setOverview] = useState(null)
   const [statusDistribution, setStatusDistribution] = useState([])
@@ -63,41 +84,12 @@ const Dashboard = () => {
           dashboardApi.getRecentProposals(),
         ])
 
-        if (overviewRes.status === 'fulfilled') {
-          setOverview(overviewRes.value.data)
-        } else {
-          console.error('Failed to fetch overview:', overviewRes.reason)
-        }
-
-        if (statusRes.status === 'fulfilled') {
-          setStatusDistribution(statusRes.value.data)
-        } else {
-          console.error('Failed to fetch status distribution:', statusRes.reason)
-        }
-
-        if (stateRes.status === 'fulfilled') {
-          setStateProgress(stateRes.value.data)
-        } else {
-          console.error('Failed to fetch state progress:', stateRes.reason)
-        }
-
-        if (trendsRes.status === 'fulfilled') {
-          setTrends(trendsRes.value.data)
-        } else {
-          console.error('Failed to fetch acquisition trends:', trendsRes.reason)
-        }
-
-        if (timelineRes.status === 'fulfilled') {
-          setTimeline(timelineRes.value.data)
-        } else {
-          console.error('Failed to fetch timeline adherence:', timelineRes.reason)
-        }
-
-        if (recentRes.status === 'fulfilled') {
-          setRecentProposals(recentRes.value.data)
-        } else {
-          console.error('Failed to fetch recent proposals:', recentRes.reason)
-        }
+        if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data)
+        if (statusRes.status === 'fulfilled') setStatusDistribution(statusRes.value.data)
+        if (stateRes.status === 'fulfilled') setStateProgress(stateRes.value.data)
+        if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value.data)
+        if (timelineRes.status === 'fulfilled') setTimeline(timelineRes.value.data)
+        if (recentRes.status === 'fulfilled') setRecentProposals(recentRes.value.data)
       } catch (err) {
         console.error('Unexpected dashboard fetch error:', err)
       } finally {
@@ -108,88 +100,95 @@ const Dashboard = () => {
     fetchData()
   }, [])
 
+  const isDark = theme.palette.mode === 'dark'
+
   return (
-    <div className="space-y-8">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {/* Page Header */}
       <motion.div initial="initial" animate="animate" variants={fadeInUp}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 2 }}>
+          <Box>
+            <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>
               Dashboard
-            </h1>
-            <p className="text-foreground-secondary mt-1 text-sm">
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               Real-time overview of land acquisition proposals and approvals
-            </p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-foreground-secondary">
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
             <RefreshCw size={14} className="animate-spin-slow" />
-            <span>Last updated: Today</span>
-          </div>
-        </div>
+            <Typography variant="caption">Last updated: Today</Typography>
+          </Box>
+        </Box>
       </motion.div>
 
       {/* KPI Cards */}
       <motion.div
         initial="initial"
         animate="animate"
-        variants={{ animate: { transition: { staggerChildren: 0.1 } } }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={{ animate: { transition: { staggerChildren: 0.08 } } }}
       >
-        {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="clay-card p-6 animate-pulse">
-              <div className="h-4 bg-neutral-200 rounded w-1/2 mb-3" />
-              <div className="h-8 bg-neutral-200 rounded w-3/4" />
-            </div>
-          ))
-        ) : overview && (
-          <>
-            <motion.div variants={fadeInUp}>
-              <KPICard
-                title="Total Proposals"
-                value={formatNumber(overview.totalProposals)}
-                icon={FileText}
-                change="+12%"
-                trend="up"
-                color="primary"
-              />
-            </motion.div>
-            <motion.div variants={fadeInUp}>
-              <KPICard
-                title="Land Proposed"
-                value={formatNumber(overview.landProposed)}
-                suffix=" ha"
-                icon={Landmark}
-                change="+8.4%"
-                trend="up"
-                color="secondary"
-              />
-            </motion.div>
-            <motion.div variants={fadeInUp}>
-              <KPICard
-                title="Land Acquired"
-                value={formatNumber(overview.landAcquired)}
-                suffix=" ha"
-                icon={CheckCircle}
-                change="+15.2%"
-                trend="up"
-                color="success"
-                subtitle={calculateProgress(overview.landAcquired, overview.landProposed) + '% of proposed'}
-              />
-            </motion.div>
-            <motion.div variants={fadeInUp}>
-              <KPICard
-                title="Pending Approvals"
-                value={formatNumber(overview.pendingDepartmentApprovals)}
-                icon={Clock}
-                change="-5.1%"
-                trend="down"
-                color="warning"
-                subtitle={`${overview.approvedDepartmentApprovals} approved · ${overview.rejectedDepartmentApprovals} rejected`}
-              />
-            </motion.div>
-          </>
-        )}
+        <Grid container spacing={3}>
+          {loading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Grid item xs={12} sm={6} lg={3} key={i}>
+                <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Skeleton variant="text" width="50%" height={20} />
+                    <Skeleton variant="text" width="75%" height={36} sx={{ mt: 1 }} />
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          ) : overview && (
+            <>
+              <Grid item xs={12} sm={6} lg={3}>
+                <KPICard
+                  title="Total Proposals"
+                  value={formatNumber(overview.totalProposals)}
+                  icon={FileText}
+                  change="+12%"
+                  trend="up"
+                  color="primary"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} lg={3}>
+                <KPICard
+                  title="Land Proposed"
+                  value={formatNumber(overview.landProposed)}
+                  suffix=" ha"
+                  icon={Landmark}
+                  change="+8.4%"
+                  trend="up"
+                  color="secondary"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} lg={3}>
+                <KPICard
+                  title="Land Acquired"
+                  value={formatNumber(overview.landAcquired)}
+                  suffix=" ha"
+                  icon={CheckCircle}
+                  change="+15.2%"
+                  trend="up"
+                  color="success"
+                  subtitle={calculateProgress(overview.landAcquired, overview.landProposed) + '% of proposed'}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} lg={3}>
+                <KPICard
+                  title="Pending Approvals"
+                  value={formatNumber(overview.pendingDepartmentApprovals)}
+                  icon={Clock}
+                  change="-5.1%"
+                  trend="down"
+                  color="warning"
+                  subtitle={`${overview.approvedDepartmentApprovals} approved · ${overview.rejectedDepartmentApprovals} rejected`}
+                />
+              </Grid>
+            </>
+          )}
+        </Grid>
       </motion.div>
 
       {/* Main Charts Row */}
@@ -197,26 +196,27 @@ const Dashboard = () => {
         initial="initial"
         animate="animate"
         variants={{ animate: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } } }}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
-        <motion.div variants={fadeInUp} className="lg:col-span-2">
-          <ChartCard
-            title="Acquisition Progress"
-            subtitle="Area acquired vs. proposed (ha)"
-            icon={TrendingUp}
-          >
-            {loading ? <SkeletonChart /> : <AcquisitionProgressChart data={trends} />}
-          </ChartCard>
-        </motion.div>
-        <motion.div variants={fadeInUp}>
-          <ChartCard
-            title="Status Distribution"
-            subtitle="Proposals by current status"
-            icon={Activity}
-          >
-            {loading ? <SkeletonChart /> : <AcquisitionStatusChart data={statusDistribution} />}
-          </ChartCard>
-        </motion.div>
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={8}>
+            <ChartCard
+              title="Acquisition Progress"
+              subtitle="Area acquired vs. proposed (ha)"
+              icon={TrendingUp}
+            >
+              {loading ? <SkeletonChart /> : <AcquisitionProgressChart data={trends} />}
+            </ChartCard>
+          </Grid>
+          <Grid item xs={12} lg={4}>
+            <ChartCard
+              title="Status Distribution"
+              subtitle="Proposals by current status"
+              icon={Activity}
+            >
+              {loading ? <SkeletonChart /> : <AcquisitionStatusChart data={statusDistribution} />}
+            </ChartCard>
+          </Grid>
+        </Grid>
       </motion.div>
 
       {/* Secondary Charts Row */}
@@ -224,111 +224,156 @@ const Dashboard = () => {
         initial="initial"
         animate="animate"
         variants={{ animate: { transition: { staggerChildren: 0.1, delayChildren: 0.2 } } }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        <motion.div variants={fadeInUp}>
-          <ChartCard
-            title="State-wise Progress"
-            subtitle="Land proposed by state (ha)"
-            icon={Landmark}
-          >
-            {loading ? <SkeletonChart /> : <StateProgressChart data={stateProgress} />}
-          </ChartCard>
-        </motion.div>
-        <motion.div variants={fadeInUp}>
-          <ChartCard
-            title="Timeline Adherence"
-            subtitle="Project schedule performance"
-            icon={Clock}
-          >
-            {loading ? <SkeletonChart /> : <TimelineAdherenceChart data={timeline} />}
-          </ChartCard>
-        </motion.div>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <ChartCard
+              title="State-wise Progress"
+              subtitle="Land proposed by state (ha)"
+              icon={Landmark}
+            >
+              {loading ? <SkeletonChart /> : <StateProgressChart data={stateProgress} />}
+            </ChartCard>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <ChartCard
+              title="Timeline Adherence"
+              subtitle="Project schedule performance"
+              icon={Clock}
+            >
+              {loading ? <SkeletonChart /> : <TimelineAdherenceChart data={timeline} />}
+            </ChartCard>
+          </Grid>
+        </Grid>
       </motion.div>
 
       {/* Recent Proposals */}
       <motion.div variants={fadeInUp}>
-        <ClayCard className="p-0 overflow-hidden">
-          <div className="p-6 border-b border-border flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <Activity size={20} className="text-primary" />
-              Recent Proposals
-            </h2>
-            <ClayButton
-              variant="outline"
-              size="sm"
-              icon={FileText}
-              onClick={() => (window.location.href = '/proposals')}
+        <Card
+          elevation={0}
+          sx={{
+            borderRadius: 4,
+            border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 4px 24px rgba(0,0,0,0.25)'
+              : '0 4px 24px rgba(30,111,255,0.04)',
+            overflow: 'hidden',
+          }}
+        >
+          <Box sx={{ p: 3, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ width: 36, height: 36, borderRadius: 2.5, bgcolor: 'primary.main', color: 'primary.contrastText', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Activity size={18} />
+              </Box>
+              <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
+                Recent Proposals
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={() => navigate('/proposals')}
+              size="small"
+              sx={{
+                color: 'primary.main',
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+              }}
             >
-              View All Proposals
-            </ClayButton>
-          </div>
+              <FileText size={16} />
+              <Typography variant="button" sx={{ ml: 1, fontSize: '0.8rem' }}>View All</Typography>
+            </IconButton>
+          </Box>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-neutral-50 dark:bg-neutral-800">
-                  <th className="text-left text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3 px-6">Proposal ID</th>
-                  <th className="text-left text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3">Project</th>
-                  <th className="text-left text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3">Location</th>
-                  <th className="text-right text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3">Area</th>
-                  <th className="text-left text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3">Status</th>
-                  <th className="text-center text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3">Progress</th>
-                  <th className="text-center text-xs font-medium text-foreground-secondary uppercase tracking-wider pb-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  {['Proposal ID', 'Project', 'Location', 'Area', 'Status', 'Progress', ''].map((head) => (
+                    <TableCell
+                      key={head}
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: 'text.secondary',
+                        bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+                        py: 2,
+                      }}
+                    >
+                      {head}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {recentProposals.slice(0, 8).map((p) => (
-                  <tr
+                  <TableRow
                     key={p.id}
-                    className="border-t border-border/50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                    hover
+                    sx={{
+                      '&:last-child td': { borderBottom: 'none' },
+                      transition: 'background-color 0.15s ease',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => navigate(`/proposals/${p.id}`)}
                   >
-                    <td className="py-3 px-6">
-                      <code className="text-xs font-mono text-foreground-secondary">{p.proposalNumber}</code>
-                    </td>
-                    <td className="py-3">
-                      <p className="text-sm font-medium text-foreground">{p.projectName}</p>
-                    </td>
-                    <td className="py-3">
-                      <p className="text-sm text-foreground">{p.district}</p>
-                      <span className="text-xs text-foreground-tertiary">{p.state}</span>
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className="text-sm font-medium text-foreground">{p.totalLandRequired} ha</span>
-                    </td>
-                    <td className="py-3">
+                    <TableCell sx={{ py: 2 }}>
+                      <Typography variant="body2" fontFamily="mono" color="text.secondary">
+                        {p.proposalNumber}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Typography variant="body2" fontWeight={600}>{p.projectName}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Typography variant="body2">{p.district}</Typography>
+                      <Typography variant="caption" color="text.secondary">{p.state}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ py: 2, textAlign: 'right' }}>
+                      <Typography variant="body2" fontWeight={500}>{p.totalLandRequired} ha</Typography>
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
                       <StatusBadge status={p.status.toLowerCase()} size="sm" />
-                    </td>
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: p.progress + '%',
-                              backgroundColor: p.progress >= 75 ? '#10B981' : p.progress >= 40 ? '#F59E0B' : '#EF4444',
+                    </TableCell>
+                    <TableCell sx={{ py: 2, minWidth: 160 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={p.progress}
+                            sx={{
+                              height: 6,
+                              borderRadius: 3,
+                              bgcolor: alpha(theme.palette.primary.main, 0.08),
+                              '& .MuiLinearProgress-bar': {
+                                borderRadius: 3,
+                                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                              },
                             }}
                           />
-                        </div>
-                        <span className="text-xs text-foreground-secondary">{p.progress}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-center">
-                      <button
-                        onClick={() => (window.location.href = `/proposals/${p.id}`)}
-                        className="px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 36, textAlign: 'right' }}>
+                          {p.progress}%
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ py: 2, textAlign: 'center' }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/proposals/${p.id}`) }}
+                        sx={{ color: 'primary.main' }}
                       >
-                        View
-                      </button>
-                    </td>
-                  </tr>
+                        <ArrowUpRight size={18} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </ClayCard>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
       </motion.div>
-    </div>
+    </Box>
   )
 }
 

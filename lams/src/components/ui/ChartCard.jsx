@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { Paper, Box, Typography } from '@mui/material'
 
 const ChartCard = forwardRef(({
   children,
@@ -11,34 +12,66 @@ const ChartCard = forwardRef(({
   ...props
 }, ref) => {
   return (
-    <div
+    <Paper
       ref={ref}
-      className={`
-        clay-card p-6
-        ${className}
-      `}
+      elevation={0}
       {...props}
+      sx={{
+        borderRadius: 4,
+        border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+        boxShadow: (theme) => theme.palette.mode === 'dark'
+          ? '0 4px 24px rgba(0,0,0,0.25)'
+          : '0 4px 24px rgba(30,111,255,0.04)',
+        overflow: 'hidden',
+        transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+        '&:hover': {
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? '0 8px 32px rgba(0,0,0,0.35)'
+            : '8px 12px 32px rgba(30,111,255,0.06), 4px 6px 14px rgba(15,23,42,0.03)',
+        },
+        ...props.sx,
+      }}
     >
       {(title || subtitle || Icon || action) && (
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+        <Box sx={{ p: 3, pb: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {Icon && (
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Icon size={18} className="text-primary" />
-              </div>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2.5,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={18} />
+              </Box>
             )}
-            <div>
-              {title && <h3 className="font-semibold text-foreground">{title}</h3>}
-              {subtitle && <p className="text-xs text-text-secondary mt-0.5">{subtitle}</p>}
-            </div>
-          </div>
-          {action && <div>{action}</div>}
-        </div>
+            <Box>
+              {title && (
+                <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+                  {title}
+                </Typography>
+              )}
+              {subtitle && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.3, display: 'block' }}>
+                  {subtitle}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+          {action && <Box>{action}</Box>}
+        </Box>
       )}
-      <div className={height}>
+      <Box sx={{ px: 3, pb: 3, height: height ? height.replace('h-', '') : 'auto', ...(className ? { className } : {}) }}>
         {children}
-      </div>
-    </div>
+      </Box>
+    </Paper>
   )
 })
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Polygon, Tooltip, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
@@ -13,28 +13,44 @@ import {
   FileText,
   Users,
   Map,
-  Clock,
   CheckCircle,
-  Package,
-  Building,
-  IndianRupee,
-  AlertCircle,
-  MapPin,
-  Layers,
-  Check,
-  X,
-  MessageSquare,
-  Trash2,
-  Edit3,
   ShieldCheck,
+  Clock,
 } from 'lucide-react'
-
-import ClayCard from '../components/ui/ClayCard'
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Chip,
+  LinearProgress,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Avatar,
+  alpha,
+  useTheme,
+  Grid,
+  Badge,
+  Breadcrumbs,
+  Link,
+} from '@mui/material'
 import ClayButton from '../components/ui/ClayButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import Timeline from '../components/common/Timeline'
-import Modal from '../components/ui/Modal'
-
 import { proposalApi, parcelApi, documentApi } from '../services'
 import { useAuth } from '../auth/AuthContext'
 import { formatDate, formatCurrency, formatArea } from '../utils/formatters'
@@ -51,7 +67,9 @@ const TIMELINE_STAGES = [
 ]
 
 const ProposalDetails = () => {
+  const theme = useTheme()
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user, hasPermission } = useAuth()
   const [proposal, setProposal] = useState(null)
   const [parcels, setParcels] = useState([])
@@ -72,6 +90,7 @@ const ProposalDetails = () => {
   const [rejectingDocId, setRejectingDocId] = useState(null)
   const [docRemarks, setDocRemarks] = useState('')
   const [docActionLoading, setDocActionLoading] = useState(false)
+  const [tab, setTab] = useState(0)
 
   const fetchProposal = async () => {
     setLoading(true)
@@ -127,7 +146,7 @@ const ProposalDetails = () => {
   }
 
   const handleEdit = () => {
-    window.location.href = `/proposals/${id}/edit`
+    navigate(`/proposals/${id}/edit`)
   }
 
   const handleDelete = async () => {
@@ -139,7 +158,7 @@ const ProposalDetails = () => {
       await proposalApi.delete(id, needsConfirm)
       showToast('Proposal deleted successfully')
       setShowDeleteModal(false)
-      window.location.href = '/proposals'
+      navigate('/proposals')
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to delete proposal', 'error')
     } finally {
@@ -240,26 +259,23 @@ const ProposalDetails = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
-        <div className="h-64 bg-neutral-200 dark:bg-neutral-700 rounded-2xl animate-pulse" />
-        <div className="h-40 bg-neutral-200 dark:bg-neutral-700 rounded-2xl animate-pulse" />
-      </div>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ height: 40, bgcolor: 'action.hover', borderRadius: 3 }} />
+        <Box sx={{ height: 300, bgcolor: 'action.hover', borderRadius: 4 }} />
+        <Box sx={{ height: 200, bgcolor: 'action.hover', borderRadius: 4 }} />
+      </Box>
     )
   }
 
   if (!proposal) {
     return (
-      <ClayCard className="p-12 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="text-4xl opacity-20">📋</div>
-          <h3 className="text-xl font-semibold text-foreground">Proposal Not Found</h3>
-          <p className="text-foreground-secondary">The requested proposal could not be found.</p>
-          <ClayButton variant="outline" onClick={() => window.history.back()}>
-            Go Back
-          </ClayButton>
-        </div>
-      </ClayCard>
+      <Card elevation={0} sx={{ borderRadius: 4, textAlign: 'center', py: 10, px: 4, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }}>
+        <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>Proposal Not Found</Typography>
+        <Typography color="text.secondary" sx={{ mb: 3 }}>The requested proposal could not be found.</Typography>
+        <Button variant="outlined" onClick={() => navigate('/proposals')} startIcon={<ChevronLeft size={18} />}>
+          Back to Proposals
+        </Button>
+      </Card>
     )
   }
 
@@ -275,20 +291,20 @@ const ProposalDetails = () => {
   const pendingCount = proposal.approvals?.filter((a) => a.action === 'PENDING').length || 0
 
   const statusConfig = {
-    DRAFT: { label: 'DRAFT', className: 'bg-status-pending/10 text-status-pending' },
-    SUBMITTED: { label: 'SUBMITTED', className: 'bg-status-review/10 text-status-review' },
-    UNDER_REVIEW: { label: 'UNDER REVIEW', className: 'bg-status-review/10 text-status-review' },
-    FIELD_VERIFICATION: { label: 'FIELD VERIFICATION', className: 'bg-status-review/10 text-status-review' },
-    APPROVED: { label: 'APPROVED', className: 'bg-status-approved/10 text-status-approved' },
-    REJECTED: { label: 'REJECTED', className: 'bg-status-rejected/10 text-status-rejected' },
-    CHANGES_REQUESTED: { label: 'CHANGES REQUESTED', className: 'bg-status-pending/10 text-status-pending' },
-    NOTIFICATION_ISSUED: { label: 'NOTIFICATION ISSUED', className: 'bg-status-approved/10 text-status-approved' },
-    AWARD_DECLARED: { label: 'AWARD DECLARED', className: 'bg-status-approved/10 text-status-approved' },
-    COMPENSATION: { label: 'COMPENSATION', className: 'bg-status-approved/10 text-status-approved' },
-    ACQUIRED: { label: 'ACQUIRED', className: 'bg-status-approved/10 text-status-approved' },
-    POSSESSION: { label: 'POSSESSION', className: 'bg-status-approved/10 text-status-approved' },
+    DRAFT: { label: 'DRAFT', color: 'warning' },
+    SUBMITTED: { label: 'SUBMITTED', color: 'info' },
+    UNDER_REVIEW: { label: 'UNDER REVIEW', color: 'info' },
+    FIELD_VERIFICATION: { label: 'FIELD VERIFICATION', color: 'info' },
+    APPROVED: { label: 'APPROVED', color: 'success' },
+    REJECTED: { label: 'REJECTED', color: 'error' },
+    CHANGES_REQUESTED: { label: 'CHANGES REQUESTED', color: 'warning' },
+    NOTIFICATION_ISSUED: { label: 'NOTIFICATION ISSUED', color: 'success' },
+    AWARD_DECLARED: { label: 'AWARD DECLARED', color: 'success' },
+    COMPENSATION: { label: 'COMPENSATION', color: 'success' },
+    ACQUIRED: { label: 'ACQUIRED', color: 'success' },
+    POSSESSION: { label: 'POSSESSION', color: 'success' },
   }
-  const currentStatus = proposal ? (statusConfig[proposal.status] || { label: proposal.status || 'PENDING', className: 'bg-status-pending/10 text-status-pending' }) : { label: 'LOADING', className: 'bg-status-pending/10 text-status-pending' }
+  const currentStatus = statusConfig[proposal.status] || { label: proposal.status || 'PENDING', color: 'warning' }
 
   const userDepartmentApproval = proposal?.approvals?.find(
     (a) => a.department?.id === user?.departmentId && a.round === proposal?.approvalRound
@@ -303,666 +319,588 @@ const ProposalDetails = () => {
   const canCompleteVerification = isFieldOfficer && proposal?.status === 'FIELD_VERIFICATION'
   const canStartFieldVerification = isFieldOfficer && proposal?.status === 'SUBMITTED'
 
-  return (
-    <motion.div
-      initial="initial"
-      animate="animate"
-      variants={{ animate: { transition: { staggerChildren: 0.1 } } }}
-      className="space-y-6"
-    >
-      {/* Header */}
-      <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }} className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => window.history.back()}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground-secondary hover:text-foreground hover:bg-neutral-50 transition-all"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">Proposal {proposal.proposalNumber}</h1>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider ${currentStatus.className}`}>
-                {currentStatus.label}
-              </span>
-            </div>
-            <p className="text-foreground-secondary mt-1">{proposal.projectName}</p>
-          </div>
-        </div>
+  const isDark = theme.palette.mode === 'dark'
 
-        <div className="flex items-center gap-2">
-          {(canEdit || canDelete) && (
-            <>
-              {canEdit && (
-                <ClayButton variant="outline" size="sm" icon={Edit3} onClick={handleEdit}>
-                  Edit
-                </ClayButton>
-              )}
-              {canDelete && (
-                <ClayButton variant="danger" size="sm" icon={Trash2} onClick={() => setShowDeleteModal(true)}>
-                  {proposal?.status === 'REJECTED' ? 'Drop Proposal' : 'Delete'}
-                </ClayButton>
-              )}
-            </>
-          )}
-          {canApprove && (
-            <>
-              <ClayButton variant="outline" size="sm" icon={X} onClick={() => openActionModal('reject')}>
-                Reject
-              </ClayButton>
-              <ClayButton variant="success" size="sm" icon={Check} onClick={() => openActionModal('approve')}>
-                Approve
-              </ClayButton>
-            </>
-          )}
-          {canRequestChanges && (
-            <ClayButton variant="outline" size="sm" icon={MessageSquare} onClick={() => openActionModal('request-changes')}>
-              Request Changes
-            </ClayButton>
-          )}
-          {canCompleteVerification && (
-            <ClayButton variant="success" size="sm" icon={CheckCircle} onClick={handleCompleteVerification} loading={actionLoading}>
-              Complete Verification
-            </ClayButton>
-          )}
-          {canStartFieldVerification && (
-            <ClayButton variant="primary" size="sm" icon={CheckCircle} onClick={handleStartFieldVerification} loading={actionLoading}>
-              Start Field Verification
-            </ClayButton>
-          )}
-          <ClayButton variant="outline" size="sm" icon={Download}>
-            Export PDF
-          </ClayButton>
-          <ClayButton variant="secondary" size="sm" icon={Share2}>
-            Share
-          </ClayButton>
-        </div>
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+            <IconButton
+              onClick={() => navigate(-1)}
+              sx={{
+                mt: 0.5,
+                color: 'text.secondary',
+                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(30,111,255,0.06)' },
+              }}
+            >
+              <ChevronLeft size={22} />
+            </IconButton>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                  {proposal.proposalNumber}
+                </Typography>
+                <Chip
+                  label={currentStatus.label}
+                  color={currentStatus.color}
+                  size="small"
+                  sx={{ fontWeight: 700, letterSpacing: '0.02em', fontSize: '0.75rem' }}
+                />
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {proposal.projectName}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            {(canEdit || canDelete) && (
+              <>
+                {canEdit && (
+                  <Button variant="outlined" size="small" startIcon={<Edit3 size={16} />} onClick={handleEdit}>
+                    Edit
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button variant="outlined" size="small" color="error" startIcon={<Trash2 size={16} />} onClick={() => setShowDeleteModal(true)}>
+                    {proposal?.status === 'REJECTED' ? 'Drop Proposal' : 'Delete'}
+                  </Button>
+                )}
+              </>
+            )}
+            {canApprove && (
+              <>
+                <Button variant="outlined" size="small" color="error" startIcon={<X size={16} />} onClick={() => openActionModal('reject')}>
+                  Reject
+                </Button>
+                <Button variant="contained" size="small" color="success" startIcon={<Check size={16} />} onClick={() => openActionModal('approve')}>
+                  Approve
+                </Button>
+              </>
+            )}
+            {canRequestChanges && (
+              <Button variant="outlined" size="small" startIcon={<MessageSquare size={16} />} onClick={() => openActionModal('request-changes')}>
+                Request Changes
+              </Button>
+            )}
+            {canCompleteVerification && (
+              <Button variant="contained" size="small" color="success" startIcon={<CheckCircle size={16} />} onClick={handleCompleteVerification} disabled={actionLoading}>
+                Complete Verification
+              </Button>
+            )}
+            {canStartFieldVerification && (
+              <Button variant="contained" size="small" startIcon={<CheckCircle size={16} />} onClick={handleStartFieldVerification} disabled={actionLoading}>
+                Start Field Verification
+              </Button>
+            )}
+            <Button variant="outlined" size="small" startIcon={<Download size={16} />}>Export PDF</Button>
+            <Button variant="text" size="small" startIcon={<Share2 size={16} />}>Share</Button>
+          </Box>
+        </Box>
       </motion.div>
 
       {/* Progress Overview */}
-      <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
-        <ClayCard className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">
-                {proposal.status === 'REJECTED' ? 'Approval Status' : 'Department Approval Progress'}
-              </h2>
-              <p className="text-sm text-foreground-secondary mt-1">
-                {proposal.status === 'REJECTED'
-                  ? `Rejected by ${rejectedCount} of ${approvalCount} departments`
-                  : `${approvedCount} of ${approvalCount} departments approved`}
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="text-3xl font-bold text-foreground">{approvalProgress}%</span>
-              <p className="text-xs text-foreground-tertiary">
-                {proposal.status === 'REJECTED' ? 'Rejected' : 'Complete'}
-              </p>
-            </div>
-          </div>
-
-          <div className="w-full h-2.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out"
-              style={{
-                width: approvalProgress + '%',
-                background: proposal.status === 'REJECTED'
-                  ? 'linear-gradient(90deg, #EF4444 0%, #DC2626 100%)'
-                  : 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.25)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2.5, flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
+                  {proposal.status === 'REJECTED' ? 'Approval Status' : 'Department Approval Progress'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {proposal.status === 'REJECTED'
+                    ? `Rejected by ${rejectedCount} of ${approvalCount} departments`
+                    : `${approvedCount} of ${approvalCount} departments approved`}
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="h3" fontWeight={700} sx={{ letterSpacing: '-0.03em' }}>
+                  {approvalProgress}%
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {proposal.status === 'REJECTED' ? 'Rejected' : 'Complete'}
+                </Typography>
+              </Box>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={approvalProgress}
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 5,
+                  background: proposal.status === 'REJECTED'
+                    ? 'linear-gradient(90deg, #EF4444, #DC2626)'
+                    : 'linear-gradient(90deg, #10B981, #059669)',
+                },
               }}
             />
-          </div>
-
-          <div className="flex justify-between text-xs text-foreground-tertiary mt-2">
-            <span>Submitted: {formatDate(proposal.submittedDate)}</span>
-            <span>Target: {formatDate(proposal.targetCompletion)}</span>
-          </div>
-        </ClayCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5 }}>
+              <Typography variant="caption" color="text.secondary">Submitted: {formatDate(proposal.submittedDate)}</Typography>
+              <Typography variant="caption" color="text.secondary">Target: {formatDate(proposal.targetCompletion)}</Typography>
+            </Box>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Department Approvals */}
       {(user?.role === 'REVIEWING_AUTHORITY' || user?.role === 'PROPOSAL_OFFICER' || user?.role === 'SUPER_ADMIN') && (
-        <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
-          <ClayCard className="p-6">
-            <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Users size={20} className="text-primary" />
-              Department Approvals
-            </h2>
-            <div className="space-y-3">
-              {proposal.approvals?.map((approval) => (
-                <div key={approval.id} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      approval.action === 'APPROVED' ? 'bg-status-approved/10 text-status-approved' :
-                      approval.action === 'REJECTED' ? 'bg-status-rejected/10 text-status-rejected' :
-                      'bg-status-pending/10 text-status-pending'
-                    }`}>
-                      {approval.action === 'APPROVED' ? <Check size={16} /> :
-                       approval.action === 'REJECTED' ? <X size={16} /> :
-                       <Clock size={16} />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{approval.department?.name || 'Unknown Department'}</p>
-                      <p className="text-xs text-foreground-secondary">
-                        {approval.action === 'APPROVED' && `Approved by ${approval.reviewer?.name || 'Unknown'} on ${formatDate(approval.updatedAt)}`}
-                        {approval.action === 'REJECTED' && `Rejected by ${approval.reviewer?.name || 'Unknown'} on ${formatDate(approval.updatedAt)}`}
-                        {approval.action === 'PENDING' && 'Pending review'}
-                        {approval.action === 'CHANGES_REQUESTED' && `Changes requested by ${approval.reviewer?.name || 'Unknown'}`}
-                      </p>
-                      {approval.remarks && (
-                        <p className="text-xs text-foreground-secondary mt-1 italic">"{approval.remarks}"</p>
-                      )}
-                    </div>
-                  </div>
-                  <StatusBadge status={(approval.action || 'pending').toLowerCase()} size="sm" />
-                </div>
-              ))}
-              {(!proposal.approvals || proposal.approvals.length === 0) && (
-                <p className="text-sm text-foreground-secondary text-center py-4">No department approvals yet</p>
-              )}
-            </div>
-          </ClayCard>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
+          <Card elevation={0} sx={{ borderRadius: 4, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.25)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.01em', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'primary.main', color: 'primary.contrastText', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Users size={16} />
+                </Box>
+                Department Approvals
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {proposal.approvals?.map((approval) => (
+                  <Card
+                    key={approval.id}
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 3,
+                      border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}`,
+                      bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                        <Avatar sx={{
+                          width: 36, height: 36, borderRadius: 2,
+                          bgcolor: approval.action === 'APPROVED' ? 'success.main' : approval.action === 'REJECTED' ? 'error.main' : 'warning.main',
+                          color: 'white',
+                        }}>
+                          {approval.action === 'APPROVED' ? <Check size={18} /> : approval.action === 'REJECTED' ? <X size={18} /> : <Clock size={18} />}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight={600}>{approval.department?.name || 'Unknown Department'}</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>
+                            {approval.action === 'APPROVED' && `Approved by ${approval.reviewer?.name || 'Unknown'} on ${formatDate(approval.updatedAt)}`}
+                            {approval.action === 'REJECTED' && `Rejected by ${approval.reviewer?.name || 'Unknown'} on ${formatDate(approval.updatedAt)}`}
+                            {approval.action === 'PENDING' && 'Pending review'}
+                            {approval.action === 'CHANGES_REQUESTED' && `Changes requested by ${approval.reviewer?.name || 'Unknown'}`}
+                          </Typography>
+                          {approval.remarks && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block', mt: 0.3 }}>
+                              "{approval.remarks}"
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                      <StatusBadge status={(approval.action || 'pending').toLowerCase()} size="sm" />
+                    </Box>
+                  </Card>
+                ))}
+                {(!proposal.approvals || proposal.approvals.length === 0) && (
+                  <Box sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
+                    <Typography variant="body2">No department approvals yet</Typography>
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
         </motion.div>
       )}
 
       {/* Timeline */}
-      <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
-        <ClayCard className="p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Activity size={20} className="text-primary" />
-            Acquisition Timeline
-          </h2>
-          <Timeline stages={TIMELINE_STAGES} currentStage={currentStageId} />
-        </ClayCard>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.25)' : '0 4px 24px rgba(30,111,255,0.04)' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.01em', mb: 2.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: 'primary.main', color: 'primary.contrastText', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Activity size={16} />
+              </Box>
+              Acquisition Timeline
+            </Typography>
+            <Timeline stages={TIMELINE_STAGES} currentStage={currentStageId} />
+          </CardContent>
+        </Card>
       </motion.div>
 
-      {/* Info Grid */}
-      <motion.div
-        variants={{ animate: { transition: { staggerChildren: 0.1 } } }}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
-        {/* Project Information */}
-        <ClayCard className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Landmark size={16} className="text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground">Project Information</h3>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <span className="text-xs text-foreground-secondary">Project Name</span>
-              <p className="text-sm font-medium text-foreground">{proposal.projectName}</p>
-            </div>
-            <DetailItem label="Department" value={proposal.department} />
-            <DetailItem label="Project Type" value={proposal.projectType} />
-            <DetailItem label="State" value={proposal.state} />
-            <DetailItem label="District" value={proposal.district} />
-            <DetailItem label="Estimated Cost" value={formatCurrency(proposal.estimatedCost)} />
-            <DetailItem label="Priority" value={proposal.priority} />
-          </div>
-        </ClayCard>
+      {/* Tabs for Info, Documents, GIS */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.25)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="fullWidth"
+            sx={{
+              borderBottom: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+              px: 2,
+            }}
+          >
+            <Tab label="Project Information" />
+            <Tab label={`Documents (${documents.length})`} />
+            <Tab label="Land Parcels & GIS" />
+          </Tabs>
 
-        {/* Land Information */}
-        <ClayCard className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center">
-              <Map size={16} className="text-secondary" />
-            </div>
-            <h3 className="font-semibold text-foreground">Land Information</h3>
-          </div>
-          <div className="space-y-3">
-            <DetailItem label="Total Area" value={formatArea(proposal.totalLandRequired)} />
-            <DetailItem label="Parcels" value={parcels.length.toString()} />
-            <DetailItem label="Land Type" value={proposal.landType} />
-            <DetailItem label="Approval Progress" value={`${approvalProgress}%`} />
-            <DetailItem label="Approvals" value={`${approvedCount} / ${approvalCount} approved`} />
-          </div>
-        </ClayCard>
-
-        {/* Affected Families */}
-        <ClayCard className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Users size={16} className="text-accent" />
-            </div>
-            <h3 className="font-semibold text-foreground">Affected Families</h3>
-          </div>
-          <div className="space-y-3">
-            <DetailItem label="Affected Families" value={proposal.affectedFamilies?.toLocaleString('en-IN') || (proposal.estimatedPopulation ? `≈ ${(proposal.estimatedPopulation / 4.2).toFixed(0).toLocaleString('en-IN')}` : '—')} />
-            <DetailItem label="Estimated Population" value={proposal.estimatedPopulation ? `≈ ${proposal.estimatedPopulation.toLocaleString('en-IN')}` : '—'} />
-            <DetailItem label="Population Density" value={proposal.populationDensity ? `${proposal.populationDensity.toLocaleString('en-IN')} people/km²` : '—'} />
-            <DetailItem label="Affected Area" value={proposal.affectedArea ? (() => { try { const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea; if (area.type === 'Polygon' || area.type === 'Circle') return `${(area.area || 0).toFixed(2)} ha`; return 'Defined' } catch { return 'Defined' } })() : '—'} />
-            <DetailItem label="Displaced Families" value={(Math.round(proposal.affectedFamilies * 0.85) || 0).toLocaleString('en-IN')} />
-            <DetailItem label="Approval Status" value={proposal.status === 'APPROVED' ? 'Completed' : proposal.status === 'REJECTED' ? 'Rejected' : 'In Progress'} />
-            <DetailItem label="Departments Approved" value={`${approvedCount} of ${approvalCount}`} />
-          </div>
-        </ClayCard>
-      </motion.div>
-
-      {/* Documents */}
-      <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
-        <ClayCard className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-info/10 flex items-center justify-center">
-                <FileText size={16} className="text-info" />
-              </div>
-              <h3 className="font-semibold text-foreground">Documents</h3>
-            </div>
-            <span className="text-sm text-foreground-secondary">{documents.length} document{documents.length !== 1 ? 's' : ''}</span>
-          </div>
-
-          {hasPermission('DOCUMENTS_UPLOAD') && (
-            <div className="mb-4 p-4 border-2 border-dashed border-border rounded-xl">
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  id="doc-upload"
-                  className="hidden"
-                  onChange={(e) => setUploadFile(e.target.files[0] || null)}
-                />
-                <label htmlFor="doc-upload" className="cursor-pointer flex-1">
-                  <p className="text-sm font-medium text-foreground">{uploadFile ? uploadFile.name : 'Choose a file to upload'}</p>
-                  <p className="text-xs text-foreground-secondary mt-1">PDF, DOC, DOCX, JPG, PNG — max 10MB</p>
-                </label>
-                <ClayButton
-                  variant="primary"
-                  size="sm"
-                  onClick={handleUploadDocument}
-                  loading={uploadingDoc}
-                  disabled={!uploadFile}
-                >
-                  Upload
-                </ClayButton>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {documents.map((doc) => {
-              const statusClass = doc.verificationStatus === 'VERIFIED'
-                ? 'bg-status-approved/10 text-status-approved'
-                : doc.verificationStatus === 'REJECTED'
-                  ? 'bg-status-rejected/10 text-status-rejected'
-                  : 'bg-status-pending/10 text-status-pending'
-
-              return (
-                <div key={doc.id} className="clay-card-hover p-4 flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <FileText size={20} className="text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">{doc.name}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusClass}`}>
-                        {doc.verificationStatus}
-                      </span>
-                    </div>
-                    <p className="text-xs text-foreground-secondary mt-1">
-                      {doc.fileType?.toUpperCase()} · {(doc.fileSize / 1024 / 1024).toFixed(1)} MB · Uploaded by {doc.uploadedBy?.name || 'Unknown'}
-                    </p>
-                    {doc.verifiedBy && (
-                      <p className="text-xs text-foreground-secondary mt-1">
-                        Verified by {doc.verifiedBy?.name || 'Unknown'} on {doc.verifiedAt ? formatDate(doc.verifiedAt) : ''}
-                      </p>
-                    )}
-                    {doc.verificationRemarks && (
-                      <p className="text-xs text-foreground-secondary mt-1">
-                        Remarks: {doc.verificationRemarks}
-                      </p>
-                    )}
-                    {canVerifyDocuments && doc.verificationStatus === 'PENDING' && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <ClayButton variant="outline" size="xs" onClick={() => { setVerifyingDocId(doc.id); setDocRemarks(''); setShowVerifyModal(true) }}>
-                          Verify
-                        </ClayButton>
-                        <ClayButton variant="danger" size="xs" onClick={() => { setRejectingDocId(doc.id); setDocRemarks(''); setShowRejectModal(true) }}>
-                          Reject
-                        </ClayButton>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </ClayCard>
-      </motion.div>
-
-      {/* Verify Document Modal */}
-      <Modal isOpen={showVerifyModal} onClose={() => { setShowVerifyModal(false); setVerifyingDocId(null); setDocRemarks('') }} title="Verify Document">
-        <div className="space-y-4">
-          <p className="text-sm text-foreground-secondary">
-            Document: {documents.find((d) => d.id === verifyingDocId)?.name}
-          </p>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Verification Remarks</label>
-            <textarea
-              value={docRemarks}
-              onChange={(e) => setDocRemarks(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 rounded-xl bg-surface border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder="Optional remarks..."
-            />
-          </div>
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => { setShowVerifyModal(false); setVerifyingDocId(null); setDocRemarks('') }} disabled={docActionLoading}>
-              Cancel
-            </ClayButton>
-            <ClayButton variant="success" onClick={handleVerifyDocument} loading={docActionLoading}>
-              Verify Document
-            </ClayButton>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Reject Document Modal */}
-      <Modal isOpen={showRejectModal} onClose={() => { setShowRejectModal(false); setRejectingDocId(null); setDocRemarks('') }} title="Reject Document">
-        <div className="space-y-4">
-          <p className="text-sm text-foreground-secondary">
-            Document: {documents.find((d) => d.id === rejectingDocId)?.name}
-          </p>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Reason for rejection *</label>
-            <textarea
-              value={docRemarks}
-              onChange={(e) => setDocRemarks(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 rounded-xl bg-surface border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              placeholder="Provide a reason for rejection..."
-            />
-          </div>
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => { setShowRejectModal(false); setRejectingDocId(null); setDocRemarks('') }} disabled={docActionLoading}>
-              Cancel
-            </ClayButton>
-            <ClayButton variant="danger" onClick={handleRejectDocument} loading={docActionLoading}>
-              Reject Document
-            </ClayButton>
-          </div>
-        </div>
-      </Modal>
-
-      {(hasPermission('PROPOSALS_VIEW') && (user?.role === 'PROPOSAL_OFFICER' || user?.role === 'REVIEWING_AUTHORITY' || user?.role === 'SUPER_ADMIN')) && documents.length > 0 && (
-        <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
-          <ClayCard className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-success/10 flex items-center justify-center">
-                <ShieldCheck size={16} className="text-success" />
-              </div>
-              <h3 className="font-semibold text-foreground">Field Verification</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground-secondary">Status</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${proposal.status === 'FIELD_VERIFICATION' || proposal.status === 'UNDER_REVIEW' || proposal.status === 'APPROVED' ? 'bg-status-approved/10 text-status-approved' : 'bg-status-pending/10 text-status-pending'}`}>
-                  {proposal.status === 'FIELD_VERIFICATION' ? 'IN_PROGRESS' : proposal.status === 'UNDER_REVIEW' || proposal.status === 'APPROVED' ? 'VERIFIED' : 'PENDING'}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between">
-                    <span className="text-sm text-foreground">{doc.name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${doc.verificationStatus === 'VERIFIED' ? 'bg-status-approved/10 text-status-approved' : doc.verificationStatus === 'REJECTED' ? 'bg-status-rejected/10 text-status-rejected' : 'bg-status-pending/10 text-status-pending'}`}>
-                      {doc.verificationStatus}
-                    </span>
-                  </div>
+          {/* Tab 0: Project Information */}
+          {tab === 0 && (
+            <CardContent sx={{ p: 3 }}>
+              <Grid container spacing={3}>
+                {[
+                  { title: 'Project Information', icon: Landmark, color: 'primary', items: [
+                    { label: 'Project Name', value: proposal.projectName },
+                    { label: 'Department', value: proposal.department },
+                    { label: 'Project Type', value: proposal.projectType },
+                    { label: 'State', value: proposal.state },
+                    { label: 'District', value: proposal.district },
+                    { label: 'Estimated Cost', value: formatCurrency(proposal.estimatedCost) },
+                    { label: 'Priority', value: proposal.priority },
+                  ]},
+                  { title: 'Land Information', icon: Map, color: 'secondary', items: [
+                    { label: 'Total Area', value: formatArea(proposal.totalLandRequired) },
+                    { label: 'Parcels', value: parcels.length.toString() },
+                    { label: 'Land Type', value: proposal.landType },
+                    { label: 'Approval Progress', value: `${approvalProgress}%` },
+                    { label: 'Approvals', value: `${approvedCount} / ${approvalCount} approved` },
+                  ]},
+                  { title: 'Affected Families', icon: Users, color: 'accent', items: [
+                    { label: 'Affected Families', value: proposal.affectedFamilies?.toLocaleString('en-IN') || '—' },
+                    { label: 'Estimated Population', value: proposal.estimatedPopulation ? `≈ ${proposal.estimatedPopulation.toLocaleString('en-IN')}` : '—' },
+                    { label: 'Population Density', value: proposal.populationDensity ? `${proposal.populationDensity.toLocaleString('en-IN')} people/km²` : '—' },
+                    { label: 'Displaced Families', value: (Math.round(proposal.affectedFamilies * 0.85) || 0).toLocaleString('en-IN') },
+                    { label: 'Approval Status', value: proposal.status === 'APPROVED' ? 'Completed' : proposal.status === 'REJECTED' ? 'Rejected' : 'In Progress' },
+                    { label: 'Departments Approved', value: `${approvedCount} of ${approvalCount}` },
+                  ]},
+                ].map((section) => (
+                  <Grid item xs={12} md={4} key={section.title}>
+                    <Card elevation={0} sx={{ borderRadius: 3, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}`, height: '100%' }}>
+                      <CardContent sx={{ p: 2.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                          <Avatar sx={{ width: 28, height: 28, borderRadius: 1.5, bgcolor: `${section.color}.main`, color: 'white' }}>
+                            <section.icon size={14} />
+                          </Avatar>
+                          <Typography variant="subtitle2" fontWeight={700}>{section.title}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          {section.items.map((item) => (
+                            <Box key={item.label}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{item.label}</Typography>
+                              <Typography variant="body2" fontWeight={500}>{item.value || '—'}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
                 ))}
-              </div>
-              <div className="text-xs text-foreground-secondary">
-                {documents.filter((d) => d.verificationStatus === 'VERIFIED').length} / {documents.length} documents verified
-              </div>
-            </div>
-          </ClayCard>
-        </motion.div>
-      )}
-
-      {/* GIS Section */}
-      <motion.div variants={{ initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } }}>
-        <ClayCard className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <Map size={20} className="text-primary" />
-              Land Parcels
-            </h2>
-            <ClayButton variant="outline" size="sm" icon={ExternalLink}>
-              Open in Full GIS View
-            </ClayButton>
-          </div>
-
-          <div className="h-[320px] w-full rounded-xl overflow-hidden mb-4">
-            <MapContainer
-              center={[28.4, 77.05]}
-              zoom={13}
-              style={{ height: '100%', width: '100%' }}
-              scrollWheelZoom={true}
-              zoomControl={true}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              {parcels.map((parcel) => {
-                if (!parcel.geometry) return null
-                try {
-                  const geo = JSON.parse(parcel.geometry)
-                  const positions = geo.type === 'Polygon' ? geo.coordinates[0].map((c) => [c[1], c[0]]) : []
-                  if (positions.length < 3) return null
-                  const statusColorMap = {
-                    acquired: '#10B981',
-                    pending: '#F59E0B',
-                    disputed: '#EF4444',
-                    notification: '#3B82F6',
-                    award: '#D97706',
-                    review: '#8B5CF6',
-                  }
-                  const color = statusColorMap[parcel.status] || '#6366F1'
-                  return (
-                    <Polygon
-                      key={parcel.id}
-                      positions={positions}
-                      pathOptions={{
-                        color,
-                        fillColor: color,
-                        fillOpacity: 0.25,
-                        weight: 2,
-                      }}
-                    >
-                      <Tooltip sticky direction="top">
-                        <div className="text-xs">
-                          <p className="font-medium">{parcel.parcelNumber}</p>
-                          <p>{parcel.area} ha · {parcel.status}</p>
-                          <p>Owner: {parcel.owner}</p>
-                        </div>
-                      </Tooltip>
-                    </Polygon>
-                  )
-                } catch {
-                  return null
-                }
-              })}
-              {proposal?.affectedArea && (() => {
-                try {
-                  const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea
-                  if (area.type === 'Polygon' && area.coordinates) {
-                    const positions = area.coordinates
-                    return (
-                      <Polygon
-                        positions={positions}
-                        pathOptions={{
-                          color: '#6366F1',
-                          fillColor: '#6366F1',
-                          fillOpacity: 0.2,
-                          weight: 2,
-                          dashArray: '5, 5',
-                        }}
-                      >
-                        <Tooltip sticky direction="top">
-                          <div className="text-xs">
-                            <p className="font-medium">Affected Area</p>
-                            <p>Type: Polygon</p>
-                            <p>Area: {area.area?.toFixed(2) || 0} ha</p>
-                          </div>
-                        </Tooltip>
-                      </Polygon>
-                    )
-                  }
-                  if (area.type === 'Circle' && area.center) {
-                    return (
-                      <Marker position={[area.center.lat, area.center.lng]}>
-                        <Popup>
-                          <div className="text-xs">
-                            <p className="font-medium">Affected Area</p>
-                            <p>Type: Circle</p>
-                            <p>Radius: {Math.round(area.radius || 0)} m</p>
-                             <p>Area: {(area.area || 0).toFixed(2)} ha</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    )
-                  }
-                  return null
-                } catch {
-                  return null
-                }
-              })()}
-            </MapContainer>
-          </div>
-
-          {proposal?.affectedArea && (
-            <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-xl text-xs text-text-secondary">
-              <strong className="text-foreground">Affected Area: </strong>
-              {(() => {
-                try {
-                  const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea
-                  if (area.type === 'Polygon') return `${area.area?.toFixed(2) || 0} ha`
-                   if (area.type === 'Circle') return `${(area.area || 0).toFixed(2)} ha (Radius: ${Math.round(area.radius || 0)} m)`
-                  return 'Defined'
-                } catch {
-                  return 'Defined'
-                }
-              })()}
-            </div>
+              </Grid>
+            </CardContent>
           )}
 
-          {/* Parcel Legend */}
-          <div className="flex flex-wrap gap-4 text-xs">
-            <LegendDot color="#10B981" label="Acquired" count={parcels.filter((p) => p.status === 'acquired').length} />
-            <LegendDot color="#F59E0B" label="Pending" count={parcels.filter((p) => p.status === 'pending').length} />
-            <LegendDot color="#3B82F6" label="Notification" count={parcels.filter((p) => p.status === 'notification').length} />
-            <LegendDot color="#EF4444" label="Disputed" count={parcels.filter((p) => p.status === 'disputed').length} />
-          </div>
-        </ClayCard>
+          {/* Tab 1: Documents */}
+          {tab === 1 && (
+            <CardContent sx={{ p: 3 }}>
+              {hasPermission('DOCUMENTS_UPLOAD') && (
+                <Box sx={{ mb: 3, p: 2.5, border: (t) => `2px dashed ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 3, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <input
+                      type="file"
+                      id="doc-upload"
+                      className="hidden"
+                      onChange={(e) => setUploadFile(e.target.files[0] || null)}
+                    />
+                    <label htmlFor="doc-upload" style={{ cursor: 'pointer', flex: 1, minWidth: 200 }}>
+                      <Typography variant="body2" fontWeight={600}>{uploadFile ? uploadFile.name : 'Choose a file to upload'}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>PDF, DOC, DOCX, JPG, PNG — max 10MB</Typography>
+                    </label>
+                    <Button variant="contained" size="small" onClick={handleUploadDocument} disabled={!uploadFile || uploadingDoc}>
+                      {uploadingDoc ? 'Uploading...' : 'Upload'}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {documents.map((doc) => {
+                  const statusColor = doc.verificationStatus === 'VERIFIED' ? 'success' : doc.verificationStatus === 'REJECTED' ? 'error' : 'warning'
+                  return (
+                    <Card key={doc.id} elevation={0} sx={{ borderRadius: 3, border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}`, p: 2, transition: 'box-shadow 0.2s ease', '&:hover': { boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.2)' : '0 4px 16px rgba(30,111,255,0.05)' } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                        <Avatar sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+                          <FileText size={20} />
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="body2" fontWeight={600}>{doc.name}</Typography>
+                            <Chip label={doc.verificationStatus} color={statusColor} size="small" sx={{ fontWeight: 600, fontSize: '0.7rem' }} />
+                          </Box>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            {doc.fileType?.toUpperCase()} · {(doc.fileSize / 1024 / 1024).toFixed(1)} MB · Uploaded by {doc.uploadedBy?.name || 'Unknown'}
+                          </Typography>
+                          {doc.verifiedBy && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>
+                              Verified by {doc.verifiedBy?.name || 'Unknown'} on {doc.verifiedAt ? formatDate(doc.verifiedAt) : ''}
+                            </Typography>
+                          )}
+                          {doc.verificationRemarks && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic', display: 'block', mt: 0.3 }}>
+                              Remarks: {doc.verificationRemarks}
+                            </Typography>
+                          )}
+                          {canVerifyDocuments && doc.verificationStatus === 'PENDING' && (
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1.5 }}>
+                              <Button size="small" variant="outlined" onClick={() => { setVerifyingDocId(doc.id); setDocRemarks(''); setShowVerifyModal(true) }}>Verify</Button>
+                              <Button size="small" variant="outlined" color="error" onClick={() => { setRejectingDocId(doc.id); setDocRemarks(''); setShowRejectModal(true) }}>Reject</Button>
+                            </Box>
+                          )}
+                        </Box>
+                      </Box>
+                    </Card>
+                  )
+                })}
+                {documents.length === 0 && (
+                  <Box sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                    <FileText size={36} style={{ opacity: 0.2 }} />
+                    <Typography variant="body2" sx={{ mt: 1 }}>No documents uploaded yet</Typography>
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          )}
+
+          {/* Tab 2: GIS */}
+          {tab === 2 && (
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ height: 360, borderRadius: 3, overflow: 'hidden', mb: 2 }}>
+                <MapContainer
+                  center={[28.4, 77.05]}
+                  zoom={13}
+                  style={{ height: '100%', width: '100%' }}
+                  scrollWheelZoom
+                  zoomControl
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {parcels.map((parcel) => {
+                    if (!parcel.geometry) return null
+                    try {
+                      const geo = JSON.parse(parcel.geometry)
+                      const positions = geo.type === 'Polygon' ? geo.coordinates[0].map((c) => [c[1], c[0]]) : []
+                      if (positions.length < 3) return null
+                      const statusColorMap = { acquired: '#10B981', pending: '#F59E0B', disputed: '#EF4444', notification: '#3B82F6', award: '#D97706', review: '#8B5CF6' }
+                      const color = statusColorMap[parcel.status] || '#6366F1'
+                      return (
+                        <Polygon key={parcel.id} positions={positions} pathOptions={{ color, fillColor: color, fillOpacity: 0.25, weight: 2 }}>
+                          <Tooltip sticky direction="top">
+                            <Box>
+                              <Typography variant="caption" fontWeight={600}>{parcel.parcelNumber}</Typography>
+                              <Typography variant="caption" sx={{ display: 'block' }}>{parcel.area} ha · {parcel.status}</Typography>
+                              <Typography variant="caption" sx={{ display: 'block' }}>Owner: {parcel.owner}</Typography>
+                            </Box>
+                          </Tooltip>
+                        </Polygon>
+                      )
+                    } catch { return null }
+                  })}
+                  {proposal?.affectedArea && (() => {
+                    try {
+                      const area = typeof proposal.affectedArea === 'string' ? JSON.parse(proposal.affectedArea) : proposal.affectedArea
+                      if (area.type === 'Polygon' && area.coordinates) {
+                        return (
+                          <Polygon positions={area.coordinates} pathOptions={{ color: '#6366F1', fillColor: '#6366F1', fillOpacity: 0.2, weight: 2, dashArray: '5, 5' }}>
+                            <Tooltip sticky direction="top">
+                              <Box>
+                                <Typography variant="caption" fontWeight={600}>Affected Area</Typography>
+                                <Typography variant="caption" sx={{ display: 'block' }}>{area.area?.toFixed(2) || 0} ha</Typography>
+                              </Box>
+                            </Tooltip>
+                          </Polygon>
+                        )
+                      }
+                      if (area.type === 'Circle' && area.center) {
+                        return (
+                          <Marker position={[area.center.lat, area.center.lng]}>
+                            <Popup>
+                              <Box>
+                                <Typography variant="caption" fontWeight={600}>Affected Area</Typography>
+                                <Typography variant="caption" sx={{ display: 'block' }}>{(area.area || 0).toFixed(2)} ha</Typography>
+                              </Box>
+                            </Popup>
+                          </Marker>
+                        )
+                      }
+                      return null
+                    } catch { return null }
+                  })()}
+                </MapContainer>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                {[
+                  { color: '#10B981', label: 'Acquired', count: parcels.filter((p) => p.status === 'acquired').length },
+                  { color: '#F59E0B', label: 'Pending', count: parcels.filter((p) => p.status === 'pending').length },
+                  { color: '#3B82F6', label: 'Notification', count: parcels.filter((p) => p.status === 'notification').length },
+                  { color: '#EF4444', label: 'Disputed', count: parcels.filter((p) => p.status === 'disputed').length },
+                ].map((item) => (
+                  <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: item.color }} />
+                    <Typography variant="caption" color="text.secondary">{item.label} ({item.count})</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          )}
+        </Card>
       </motion.div>
 
       {/* Action Modal */}
-      <Modal
-        isOpen={showActionModal}
-        onClose={() => setShowActionModal(false)}
-        title={actionType === 'approve' ? 'Approve Proposal' : actionType === 'reject' ? 'Reject Proposal' : 'Request Changes'}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              {actionType === 'reject' ? 'Rejection Reason (required)' : 'Remarks (required)'}
-            </label>
-            <textarea
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              placeholder={actionType === 'reject' ? 'Enter rejection reason...' : 'Enter remarks...'}
-              rows={4}
-              className="w-full px-4 py-2.5 rounded-xl bg-surface border border-border text-foreground placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => setShowActionModal(false)}>
-              Cancel
-            </ClayButton>
-            <ClayButton
-              variant={actionType === 'approve' ? 'success' : actionType === 'reject' ? 'danger' : 'primary'}
-              onClick={handleAction}
-              loading={actionLoading}
-            >
-              {actionLoading ? 'Processing...' : actionType === 'approve' ? 'Approve' : actionType === 'reject' ? 'Reject' : 'Submit'}
-            </ClayButton>
-          </div>
-        </div>
-      </Modal>
+      <Dialog open={showActionModal} onClose={() => setShowActionModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
+          {actionType === 'approve' ? 'Approve Proposal' : actionType === 'reject' ? 'Reject Proposal' : 'Request Changes'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={actionType === 'reject' ? 'Rejection Reason (required)' : 'Remarks (required)'}
+            type="text"
+            fullWidth
+            multiline
+            rows={4}
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder={actionType === 'reject' ? 'Enter rejection reason...' : 'Enter remarks...'}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button variant="outlined" onClick={() => setShowActionModal(false)} disabled={actionLoading}>Cancel</Button>
+          <Button
+            variant="contained"
+            color={actionType === 'approve' ? 'success' : actionType === 'reject' ? 'error' : 'primary'}
+            onClick={handleAction}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Processing...' : actionType === 'approve' ? 'Approve' : actionType === 'reject' ? 'Reject' : 'Submit'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="Delete Proposal"
-      >
-        <div className="space-y-4">
+      <Dialog open={showDeleteModal} onClose={() => setShowDeleteModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete Proposal</DialogTitle>
+        <DialogContent>
           {(() => {
             const isDraft = proposal?.status === 'DRAFT'
             const isSuperAdmin = user?.role === 'SUPER_ADMIN'
 
             if (isDraft) {
-              return (
-                <p className="text-sm text-foreground-secondary">
-                  This action will permanently delete this proposal and its associated records. This cannot be undone.
-                </p>
-              )
+              return <DialogContentText>This action will permanently delete this proposal and its associated records. This cannot be undone.</DialogContentText>
             }
 
             if (isSuperAdmin) {
               return (
-                <div className="space-y-2">
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <DialogContentText color="error.main" fontWeight={600}>
                     Warning: You are about to delete a non-draft proposal. This action is irreversible.
-                  </p>
-                  <p className="text-sm text-foreground-secondary">
+                  </DialogContentText>
+                  <DialogContentText>
                     This proposal and all its associated records will be permanently deleted. This cannot be undone.
-                  </p>
-                </div>
+                  </DialogContentText>
+                </Box>
               )
             }
 
             return null
           })()}
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
-              Cancel
-            </ClayButton>
-            <ClayButton variant="danger" onClick={handleDelete} loading={deleting}>
-              {deleting ? 'Deleting...' : 'Delete Proposal'}
-            </ClayButton>
-          </div>
-        </div>
-      </Modal>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button variant="outlined" onClick={() => setShowDeleteModal(false)} disabled={deleting}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete Proposal'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Verify Document Modal */}
+      <Dialog open={showVerifyModal} onClose={() => { setShowVerifyModal(false); setVerifyingDocId(null); setDocRemarks('') }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Verify Document</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Document: {documents.find((d) => d.id === verifyingDocId)?.name}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Verification Remarks"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            value={docRemarks}
+            onChange={(e) => setDocRemarks(e.target.value)}
+            placeholder="Optional remarks..."
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button variant="outlined" onClick={() => { setShowVerifyModal(false); setVerifyingDocId(null); setDocRemarks('') }} disabled={docActionLoading}>Cancel</Button>
+          <Button variant="contained" color="success" onClick={handleVerifyDocument} disabled={docActionLoading}>
+            {docActionLoading ? 'Verifying...' : 'Verify Document'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reject Document Modal */}
+      <Dialog open={showRejectModal} onClose={() => { setShowRejectModal(false); setRejectingDocId(null); setDocRemarks('') }} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4 } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Reject Document</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Document: {documents.find((d) => d.id === rejectingDocId)?.name}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for rejection"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            value={docRemarks}
+            onChange={(e) => setDocRemarks(e.target.value)}
+            placeholder="Provide a reason for rejection..."
+            required
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button variant="outlined" onClick={() => { setShowRejectModal(false); setRejectingDocId(null); setDocRemarks('') }} disabled={docActionLoading}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleRejectDocument} disabled={docActionLoading}>
+            {docActionLoading ? 'Rejecting...' : 'Reject Document'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-clay-lg z-50 ${toast.type === 'error' ? 'bg-status-rejected text-white' : 'bg-status-approved text-white'}`}>
-          {toast.message}
-        </div>
+        <Card
+          elevation={0}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1300,
+            borderRadius: 3,
+            px: 3,
+            py: 2,
+            bgcolor: toast.type === 'error' ? 'error.main' : 'success.main',
+            color: 'white',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          }}
+        >
+          <Typography variant="body2" fontWeight={600}>{toast.message}</Typography>
+        </Card>
       )}
-    </motion.div>
-  )
-}
-
-function DetailItem({ label, value }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="flex-1">
-        <span className="text-xs text-foreground-secondary">{label}</span>
-        <p className="text-sm font-medium text-foreground">{value || '—'}</p>
-      </div>
-    </div>
-  )
-}
-
-function LegendDot({ color, label, count }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-      <span className="text-foreground-secondary">{label}</span>
-      {count !== undefined && <span className="text-foreground font-medium">({count})</span>}
-    </div>
+    </Box>
   )
 }
 

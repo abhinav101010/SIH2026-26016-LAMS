@@ -1,27 +1,44 @@
 import { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Bell,
-  Check,
-  Search,
-  Trash2,
-  AlertCircle,
-  Calendar,
-  CheckCircle,
-  FileText,
-  Settings,
-  Home,
-} from 'lucide-react'
-import ClayCard from '../components/ui/ClayCard'
+import { Bell, Check, Search, Trash2, AlertCircle, Calendar, CheckCircle, FileText, Settings, Home } from 'lucide-react'
 import ClayButton from '../components/ui/ClayButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import Modal from '../components/ui/Modal'
 import { notificationApi } from '../services'
 import { useAuth } from '../auth/AuthContext'
 import PermissionGate from '../auth/PermissionGate'
+import { useToast } from '../components/ui/Toast'
+import { Box, Card, Typography, TextField, Chip, alpha, useTheme, IconButton } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
+
+const typeIcons = {
+  approval: Bell,
+  compensation: Bell,
+  document: FileText,
+  deadline: Calendar,
+  status: AlertCircle,
+  possession: Home,
+  system: Settings,
+  verification: AlertCircle,
+}
+
+const getTypeColor = (type) => {
+  const map = {
+    approval: 'info',
+    compensation: 'success',
+    document: 'secondary',
+    deadline: 'warning',
+    status: 'primary',
+    possession: 'success',
+    system: 'default',
+  }
+  return map[type] || 'default'
+}
 
 const NotificationsPage = () => {
   const { user, hasPermission } = useAuth()
+  const toast = useToast()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [filter, setFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [notifications, setNotifications] = useState([])
@@ -30,6 +47,8 @@ const NotificationsPage = () => {
   const [deleting, setDeleting] = useState(false)
   const [showClearAllModal, setShowClearAllModal] = useState(false)
   const [clearingAll, setClearingAll] = useState(false)
+
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -114,47 +133,93 @@ const NotificationsPage = () => {
     }
   }
 
-  const typeIcons = {
-    approval: Bell,
-    compensation: Bell,
-    document: FileText,
-    deadline: Calendar,
-    status: AlertCircle,
-    possession: Home,
-    system: Settings,
-    verification: AlertCircle,
-  }
-
-  const getTypeColor = (type) => {
-    const map = {
-      approval: 'info',
-      compensation: 'success',
-      document: 'secondary',
-      deadline: 'warning',
-      status: 'primary',
-      possession: 'emerald',
-      system: 'neutral',
-    }
-    return map[type] || 'neutral'
-  }
+  const columns = [
+    {
+      field: 'title',
+      headerName: 'Notification',
+      flex: 2,
+      minWidth: 280,
+      renderCell: (params) => {
+        const n = params.row
+        const Icon = typeIcons[n.type] || Bell
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, py: 0.5 }}>
+            <Box sx={{
+              width: 32, height: 32, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              bgcolor: n.unread ? 'primary.main' : 'action.disabledBackground',
+              color: n.unread ? 'primary.contrastText' : 'text.secondary',
+            }}>
+              <Icon size={14} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body2" fontWeight={n.unread ? 600 : 400}>{n.title}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{n.message}</Typography>
+            </Box>
+          </Box>
+        )
+      },
+    },
+    {
+      field: 'priority',
+      headerName: 'Priority',
+      flex: 1,
+      minWidth: 100,
+      renderCell: (params) => {
+        const priority = params.value
+        if (priority !== 'high') return <Typography variant="caption" color="text.secondary">-</Typography>
+        return <StatusBadge status="error" size="xs">High Priority</StatusBadge>
+      },
+    },
+    {
+      field: 'time',
+      headerName: 'Time',
+      flex: 1,
+      minWidth: 120,
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      minWidth: 120,
+      sortable: false,
+      renderCell: (params) => {
+        const n = params.row
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {n.unread && (
+              <PermissionGate permission="NOTIFICATIONS_MANAGE" fallback={<div />}>
+                <IconButton size="small" onClick={() => markAsRead(n.id)} sx={{ color: 'primary.main' }}>
+                  <CheckCircle size={14} />
+                </IconButton>
+              </PermissionGate>
+            )}
+            <PermissionGate permission="NOTIFICATIONS_MANAGE" fallback={<div />}>
+              <IconButton size="small" onClick={() => setDeleteId(n.id)} sx={{ color: 'error.main' }}>
+                <Trash2 size={14} />
+              </IconButton>
+            </PermissionGate>
+          </Box>
+        )
+      },
+    },
+  ]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Bell size={20} className="text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-            <p className="text-foreground-secondary text-sm mt-1">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: 3, bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.contrastText' }}>
+            <Bell size={20} />
+          </Box>
+          <Box>
+            <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>Notifications</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               {unreadCount} unread {unreadCount === 1 ? 'notification' : 'notifications'}
-            </p>
-          </div>
-        </div>
+            </Typography>
+          </Box>
+        </Box>
 
-        <div className="flex items-center gap-2">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           {hasPermission('NOTIFICATIONS_MANAGE') && unreadCount > 0 && (
             <ClayButton variant="outline" size="sm" icon={Check} onClick={markAllRead}>
               Mark All as Read
@@ -165,147 +230,66 @@ const NotificationsPage = () => {
               Clear All
             </ClayButton>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      {/* Filters */}
-      <ClayCard className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex flex-wrap gap-1">
-            <FilterButton label="All" value="all" current={filter} onClick={setFilter} count={notifications.length} />
-            <FilterButton label="Unread" value="unread" current={filter} onClick={setFilter} count={unreadCount} />
-            <FilterButton label="Read" value="read" current={filter} onClick={setFilter} count={notifications.length - unreadCount} />
-          </div>
+      <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
+        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              {[
+                { label: 'All', value: 'all', count: notifications.length },
+                { label: 'Unread', value: 'unread', count: unreadCount },
+                { label: 'Read', value: 'read', count: notifications.length - unreadCount },
+              ].map((tab) => (
+                <Chip
+                  key={tab.value}
+                  label={`${tab.label} (${tab.count})`}
+                  onClick={() => setFilter(tab.value)}
+                  color={filter === tab.value ? 'primary' : 'default'}
+                  variant={filter === tab.value ? 'filled' : 'outlined'}
+                  sx={{ borderRadius: 2, fontWeight: 500, fontSize: '0.8125rem' }}
+                />
+              ))}
+            </Box>
 
-          <div className="relative w-56">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground-tertiary" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search notifications..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-surface border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            <Box sx={{ position: 'relative', width: 220 }}>
+              <Search size={14} sx={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'text.secondary' }} />
+              <TextField
+                placeholder="Search notifications..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="small"
+                fullWidth
+                InputProps={{
+                  startAdornment: <Search size={14} style={{ marginRight: 6, opacity: 0.5 }} />,
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Box sx={{ height: 520, width: '100%' }}>
+            <DataGrid
+              rows={filteredNotifications}
+              columns={columns}
+              loading={loading}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              sx={{
+                border: 'none',
+                borderRadius: 0,
+                '& .MuiDataGrid-row': { cursor: 'pointer' },
+                '& .MuiDataGrid-cell': { borderColor: borderColor },
+                '& .MuiDataGrid-columnHeaders': { borderColor: borderColor, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' },
+                '& .MuiDataGrid-footerContainer': { borderColor: borderColor },
+              }}
             />
-          </div>
-        </div>
-      </ClayCard>
+          </Box>
+        </Box>
+      </Card>
 
-      {/* Notifications List */}
-      {filteredNotifications.length === 0 ? (
-        <ClayCard className="p-12 text-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-4xl">
-              📭
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">No notifications</h3>
-            <p className="text-sm text-foreground-secondary">
-              {searchQuery || filter !== 'all'
-                ? 'No notifications match your current filters.'
-                : 'You have no notifications at this time.'}
-            </p>
-          </div>
-        </ClayCard>
-      ) : (
-        <motion.div
-          className="space-y-3"
-          initial="hide"
-          animate="show"
-          variants={{
-            show: { transition: { staggerChildren: 0.05 } },
-          }}
-        >
-          <AnimatePresence>
-            {filteredNotifications.map((notification) => {
-              const Icon = typeIcons[notification.type] || Bell
-              return (
-                <motion.div
-                  key={notification.id}
-                  layout
-                  initial={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95, x: 100 }}
-                  className={`
-                    clay-card-hover p-4
-                    ${notification.unread
-                      ? 'border-l-3 border-primary bg-primary/2'
-                      : 'border border-border'}
-                  `}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`
-                      w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-                      ${notification.unread
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-neutral-100 dark:bg-neutral-800 text-foreground-tertiary'}
-                    `}>
-                      <Icon size={16} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className={`
-                          text-sm font-medium
-                          ${notification.unread ? 'text-foreground' : 'text-foreground-secondary'}
-                        `}>
-                          {notification.title}
-                        </p>
-                        <span className="text-xs text-foreground-tertiary whitespace-nowrap">
-                          {notification.time}
-                        </span>
-                      </div>
-                      <p className={`
-                        text-sm mt-1
-                        ${notification.unread ? 'text-foreground' : 'text-foreground-secondary'}
-                      `}>
-                        {notification.message}
-                      </p>
-
-                      <div className="flex items-center gap-3 mt-2">
-                        {notification.priority === 'high' && (
-                          <StatusBadge status="error" size="xs">
-                            High Priority
-                          </StatusBadge>
-                        )}
-                        {notification.action && (
-                          <button className="text-xs font-medium text-primary hover:text-primary-hover">
-                            {notification.action}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 ml-2">
-                      {notification.unread && (
-                        <PermissionGate permission="NOTIFICATIONS_MANAGE" fallback={<div />}>
-                          <button
-                            onClick={() => markAsRead(notification.id)}
-                            title="Mark as read"
-                            className="p-1 rounded-lg text-foreground-tertiary hover:text-foreground hover:bg-neutral-50 dark:hover:bg-neutral-800 transition"
-                          >
-                            <CheckCircle size={14} />
-                          </button>
-                        </PermissionGate>
-                      )}
-                      <PermissionGate permission="NOTIFICATIONS_MANAGE" fallback={<div />}>
-                        <button
-                          onClick={() => setDeleteId(notification.id)}
-                          title="Delete"
-                          className="p-1 rounded-lg text-foreground-tertiary hover:text-status-rejected hover:bg-status-rejected/10 transition"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </PermissionGate>
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* Delete Confirmation Modal */}
       <Modal isOpen={!!deleteId} onClose={() => { setDeleteId(null); setDeleting(false) }} title="Delete Notification">
-        <div className="space-y-4">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           {(() => {
             const notification = notifications.find((n) => n.id === deleteId)
             const isOwn = notification?.userId === user?.id
@@ -313,73 +297,51 @@ const NotificationsPage = () => {
 
             if (!isOwn && isSuperAdmin) {
               return (
-                <div className="space-y-2">
-                  <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600 }}>
                     Warning: You are about to delete another user's notification. This action is irreversible.
-                  </p>
-                  <p className="text-sm text-foreground-secondary">
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
                     This notification will be permanently deleted. This cannot be undone.
-                  </p>
-                </div>
+                  </Typography>
+                </Box>
               )
             }
 
             return (
-              <p className="text-sm text-foreground-secondary">
+              <Typography variant="body2" color="text.secondary">
                 This action will permanently delete this notification. This cannot be undone.
-              </p>
+              </Typography>
             )
           })()}
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => { setDeleteId(null); setDeleting(false) }} disabled={deleting}>
-              Cancel
-            </ClayButton>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+            <ClayButton variant="outline" onClick={() => { setDeleteId(null); setDeleting(false) }} disabled={deleting}>Cancel</ClayButton>
             <ClayButton variant="danger" onClick={() => handleDelete(deleteId)} loading={deleting}>
               {deleting ? 'Deleting...' : 'Delete Notification'}
             </ClayButton>
-          </div>
-        </div>
+          </Box>
+        </Box>
       </Modal>
 
-      {/* Clear All Confirmation Modal */}
       <Modal isOpen={showClearAllModal} onClose={() => setShowClearAllModal(false)} title="Clear All Notifications">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600 }}>
               Warning: You are about to permanently delete all notifications. This action is irreversible.
-            </p>
-            <p className="text-sm text-foreground-secondary">
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
               All notifications will be permanently removed from the system. This cannot be undone.
-            </p>
-          </div>
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => setShowClearAllModal(false)} disabled={clearingAll}>
-              Cancel
-            </ClayButton>
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+            <ClayButton variant="outline" onClick={() => setShowClearAllModal(false)} disabled={clearingAll}>Cancel</ClayButton>
             <ClayButton variant="danger" onClick={clearAll} loading={clearingAll}>
               {clearingAll ? 'Clearing...' : 'Clear All Notifications'}
             </ClayButton>
-          </div>
-        </div>
+          </Box>
+        </Box>
       </Modal>
-    </div>
-  )
-}
-
-function FilterButton({ label, value, current, onClick, count }) {
-  const active = current === value
-  return (
-    <button
-      onClick={() => onClick(value)}
-      className={`
-        px-3 py-1.5 rounded-full text-xs font-medium transition-all
-        ${active
-          ? 'bg-primary text-white shadow-clay-btn'
-          : 'bg-neutral-100 dark:bg-neutral-800 text-foreground-secondary hover:text-foreground hover:bg-neutral-200 dark:hover:bg-neutral-700'}
-      `}
-    >
-      {label} ({count})
-    </button>
+    </Box>
   )
 }
 

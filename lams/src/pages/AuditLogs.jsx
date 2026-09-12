@@ -3,13 +3,12 @@ import { Search, Trash2 } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { auditApi } from '../services'
 import { useToast } from '../components/ui/Toast'
-import ClayCard from '../components/ui/ClayCard'
 import ClayButton from '../components/ui/ClayButton'
-import ClaySelect from '../components/ui/ClaySelect'
 import ClayBadge from '../components/ui/ClayBadge'
-import DataTable from '../components/ui/DataTable'
 import Modal from '../components/ui/Modal'
 import { formatDate } from '../utils/formatters'
+import { Box, Card, Typography, TextField, FormControl, InputLabel, Select, MenuItem, IconButton, alpha, useTheme } from '@mui/material'
+import { DataGrid } from '@mui/x-data-grid'
 
 const CHANGE_TYPE_COLORS = {
   CREATED: 'success',
@@ -43,6 +42,8 @@ const RECORD_TYPE_LABELS = {
 const AuditLogs = () => {
   const { user, hasPermission } = useAuth()
   const toast = useToast()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -56,6 +57,8 @@ const AuditLogs = () => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false)
   const [deletingAll, setDeletingAll] = useState(false)
   const fetchedRef = useRef(false)
+
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   const fetchLogs = async () => {
     setLoading(true)
@@ -130,51 +133,60 @@ const AuditLogs = () => {
 
   const columns = [
     {
-      key: 'entityType',
-      header: 'Record Type',
-      render: (value) => RECORD_TYPE_LABELS[value] || value,
+      field: 'entityType',
+      headerName: 'Record Type',
+      flex: 1,
+      minWidth: 130,
+      renderCell: (params) => RECORD_TYPE_LABELS[params.value] || params.value,
     },
     {
-      key: 'entityId',
-      header: 'Record ID',
-      render: (value) => value ? `${value.slice(0, 8)}...` : '-',
+      field: 'entityId',
+      headerName: 'Record ID',
+      flex: 1,
+      minWidth: 130,
+      renderCell: (params) => params.value ? `${String(params.value).slice(0, 8)}...` : '-',
     },
     {
-      key: 'action',
-      header: 'Change',
-      render: (value) => {
-        const status = CHANGE_TYPE_COLORS[value] || 'default'
-        const label = value?.replace('PROPOSAL_', '').replace('USER_', '').replace('ROLE_', '') || value
-        return (
-          <ClayBadge status={status} size="sm">
-            {label}
-          </ClayBadge>
-        )
+      field: 'action',
+      headerName: 'Change',
+      flex: 1,
+      minWidth: 140,
+      renderCell: (params) => {
+        const status = CHANGE_TYPE_COLORS[params.value] || 'default'
+        const label = String(params.value || '').replace('PROPOSAL_', '').replace('USER_', '').replace('ROLE_', '')
+        return <ClayBadge status={status} size="sm">{label}</ClayBadge>
       },
     },
     {
-      key: 'user',
-      header: 'Changed By',
-      render: (_, row) => row.user?.name || row.user?.email || '-',
+      field: 'user',
+      headerName: 'Changed By',
+      flex: 2,
+      minWidth: 200,
+      renderCell: (params) => {
+        const user = params.row?.user
+        return <Typography variant="body2" color="text.secondary">{user?.name || user?.email || '-'}</Typography>
+      },
     },
     {
-      key: 'createdAt',
-      header: 'Date & Time',
-      render: (value) => formatDate(value),
+      field: 'createdAt',
+      headerName: 'Date & Time',
+      flex: 1,
+      minWidth: 160,
       sortable: true,
+      renderCell: (params) => <Typography variant="body2" color="text.secondary">{formatDate(params.value)}</Typography>,
     },
     ...(user?.role === 'SUPER_ADMIN'
       ? [
           {
-            key: 'actions',
-            header: 'Actions',
-            render: (_, row) => (
-              <button
-                onClick={() => setDeleteId(row.id)}
-                className="p-1 rounded-lg text-foreground-tertiary hover:text-status-rejected hover:bg-status-rejected/10 transition"
-              >
+            field: 'actions',
+            headerName: 'Actions',
+            flex: 1,
+            minWidth: 100,
+            sortable: false,
+            renderCell: (params) => (
+              <IconButton size="small" onClick={() => setDeleteId(params.row.id)} sx={{ color: 'error.main' }}>
                 <Trash2 size={14} />
-              </button>
+              </IconButton>
             ),
           },
         ]
@@ -183,24 +195,24 @@ const AuditLogs = () => {
 
   if (!hasPermission('AUDIT_VIEW')) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">403</h1>
-          <p className="text-foreground-secondary">Access Denied</p>
-          <p className="text-sm text-foreground-secondary mt-2">You do not have permission to view audit logs.</p>
-        </div>
-      </div>
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>403</Typography>
+          <Typography variant="body2" color="text.secondary">Access Denied</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>You do not have permission to view audit logs.</Typography>
+        </Box>
+      </Box>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Audit Logs</h1>
-          <p className="text-sm text-text-secondary mt-1">Track all changes across the application</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>Audit Logs</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Track all changes across the application</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           {user?.role === 'SUPER_ADMIN' && total > 0 && (
             <ClayButton variant="outline" size="sm" icon={Trash2} onClick={() => setShowDeleteAllModal(true)}>
               Clear All Logs
@@ -209,108 +221,112 @@ const AuditLogs = () => {
           <ClayButton variant="outline" size="sm" onClick={fetchLogs} loading={loading}>
             Refresh
           </ClayButton>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <ClayCard>
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
-            <input
-              type="text"
-              placeholder="Search audit logs..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-surface border border-border text-foreground placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+      <Card elevation={0} sx={{ borderRadius: 4, border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
+        <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Box sx={{ flex: 1, minWidth: 240 }}>
+              <TextField
+                placeholder="Search audit logs..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                size="small"
+                fullWidth
+                InputProps={{
+                  startAdornment: <Search size={16} style={{ marginRight: 8, opacity: 0.5 }} />,
+                }}
+              />
+            </Box>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Change</InputLabel>
+              <Select value={changeTypeFilter} label="Change" onChange={(e) => setChangeTypeFilter(e.target.value)}>
+                <MenuItem value="">All Changes</MenuItem>
+                <MenuItem value="CREATED">Created</MenuItem>
+                <MenuItem value="UPDATED">Updated</MenuItem>
+                <MenuItem value="DELETED">Deleted</MenuItem>
+                <MenuItem value="SUBMITTED">Submitted</MenuItem>
+                <MenuItem value="APPROVED">Approved</MenuItem>
+                <MenuItem value="REJECTED">Rejected</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Record</InputLabel>
+              <Select value={recordTypeFilter} label="Record" onChange={(e) => setRecordTypeFilter(e.target.value)}>
+                <MenuItem value="">All Records</MenuItem>
+                <MenuItem value="Proposal">Proposal</MenuItem>
+                <MenuItem value="User">User</MenuItem>
+                <MenuItem value="Role">Role</MenuItem>
+                <MenuItem value="LandParcel">Land Parcel</MenuItem>
+                <MenuItem value="Document">Document</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ height: 520, width: '100%' }}>
+            <DataGrid
+              rows={logs}
+              columns={columns}
+              loading={loading}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              sx={{
+                border: 'none',
+                borderRadius: 0,
+                '& .MuiDataGrid-cell': { borderColor: borderColor },
+                '& .MuiDataGrid-columnHeaders': { borderColor: borderColor, bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' },
+                '& .MuiDataGrid-footerContainer': { borderColor: borderColor },
+              }}
             />
-          </div>
-          <ClaySelect
-            value={changeTypeFilter}
-            onChange={(e) => setChangeTypeFilter(e.target.value)}
-            className="w-full sm:w-48"
-          >
-            <option value="">All Changes</option>
-            <option value="CREATED">Created</option>
-            <option value="UPDATED">Updated</option>
-            <option value="DELETED">Deleted</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </ClaySelect>
-          <ClaySelect
-            value={recordTypeFilter}
-            onChange={(e) => setRecordTypeFilter(e.target.value)}
-            className="w-full sm:w-48"
-          >
-            <option value="">All Records</option>
-            <option value="Proposal">Proposal</option>
-            <option value="User">User</option>
-            <option value="Role">Role</option>
-            <option value="LandParcel">Land Parcel</option>
-            <option value="Document">Document</option>
-          </ClaySelect>
-        </div>
+          </Box>
 
-        <DataTable
-          columns={columns}
-          data={logs}
-          searchable={false}
-          pagination={true}
-          pageSize={10}
-          emptyMessage={loading ? 'Loading...' : 'No audit logs found'}
-        />
+          {total > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              Showing {logs.length} of {total} records
+            </Typography>
+          )}
+        </Box>
+      </Card>
 
-        {total > 0 && (
-          <div className="mt-4 text-sm text-text-secondary">
-            Showing {logs.length} of {total} records
-          </div>
-        )}
-      </ClayCard>
-
-      {/* Delete Confirmation Modal */}
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Audit Log">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600 }}>
               Warning: You are about to permanently delete an audit log. This action is irreversible.
-            </p>
-            <p className="text-sm text-foreground-secondary">
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
               This audit log will be permanently removed from the system. This cannot be undone.
-            </p>
-          </div>
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => setDeleteId(null)} disabled={deleting}>
-              Cancel
-            </ClayButton>
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+            <ClayButton variant="outline" onClick={() => setDeleteId(null)} disabled={deleting}>Cancel</ClayButton>
             <ClayButton variant="danger" onClick={handleDelete} loading={deleting}>
               {deleting ? 'Deleting...' : 'Delete Audit Log'}
             </ClayButton>
-          </div>
-        </div>
+          </Box>
+        </Box>
       </Modal>
 
-      {/* Delete All Confirmation Modal */}
       <Modal isOpen={showDeleteAllModal} onClose={() => setShowDeleteAllModal(false)} title="Clear All Audit Logs">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 600 }}>
               Warning: You are about to permanently delete all audit logs. This action is irreversible.
-            </p>
-            <p className="text-sm text-foreground-secondary">
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
               All audit logs will be permanently removed from the system. This cannot be undone.
-            </p>
-          </div>
-          <div className="flex justify-end gap-3">
-            <ClayButton variant="outline" onClick={() => setShowDeleteAllModal(false)} disabled={deletingAll}>
-              Cancel
-            </ClayButton>
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+            <ClayButton variant="outline" onClick={() => setShowDeleteAllModal(false)} disabled={deletingAll}>Cancel</ClayButton>
             <ClayButton variant="danger" onClick={handleDeleteAll} loading={deletingAll}>
               {deletingAll ? 'Deleting...' : 'Delete All Audit Logs'}
             </ClayButton>
-          </div>
-        </div>
+          </Box>
+        </Box>
       </Modal>
-    </div>
+    </Box>
   )
 }
 
