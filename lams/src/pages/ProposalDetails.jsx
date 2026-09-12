@@ -268,7 +268,7 @@ const ProposalDetails = () => {
     if (proposal.status === 'FIELD_VERIFICATION') return 'field_verification'
     return TIMELINE_STAGES.find((s) => s.label === currentPhase)?.id || 'approved'
   })()
-  const approvalProgress = proposal.approvalProgress || 0
+  const approvalProgress = proposal.progress || 0
   const approvalCount = proposal.approvals?.length || 0
   const approvedCount = proposal.approvals?.filter((a) => a.action === 'APPROVED').length || 0
   const rejectedCount = proposal.approvals?.filter((a) => a.action === 'REJECTED').length || 0
