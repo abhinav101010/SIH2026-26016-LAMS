@@ -83,7 +83,7 @@ const requirePermission = (...permissions) => {
 
     const userPermissions = req.user.permissions || []
 
-    const hasPermission = permissions.every((perm) => userPermissions.includes(perm))
+    const hasPermission = permissions.some((perm) => userPermissions.includes(perm))
 
     if (!hasPermission) {
       return res.status(403).json({

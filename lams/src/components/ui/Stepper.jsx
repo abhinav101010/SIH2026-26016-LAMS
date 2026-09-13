@@ -8,8 +8,8 @@ const Stepper = ({ steps, currentStep, onChange }) => {
   }
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between">
+    <div className="mb-8 overflow-x-auto">
+      <div className="flex items-center justify-between min-w-[560px]">
         {steps.map((step, index) => {
           const stepNum = index + 1
           const isActive = currentStep === stepNum

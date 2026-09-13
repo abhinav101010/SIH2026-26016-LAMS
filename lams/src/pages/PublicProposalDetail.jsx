@@ -200,7 +200,7 @@ const PublicProposalDetail = () => {
             <Box sx={{ p: 3, pb: 2 }}>
               <Typography variant="subtitle2" fontWeight={700}>Location Map</Typography>
             </Box>
-            <Box sx={{ height: 400, overflow: 'hidden' }}>
+            <Box sx={{ height: 'clamp(56vh, 24rem, 82vh)', overflow: 'hidden' }}>
               <MapContainer center={INDIA_CENTER} zoom={5} style={{ width: '100%', height: '100%' }} scrollWheelZoom>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
                 {geo.type === 'Polygon' && (

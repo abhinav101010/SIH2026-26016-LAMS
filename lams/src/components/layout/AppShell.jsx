@@ -1,15 +1,26 @@
 import { useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
-import { Box } from '@mui/material'
+import { Box, useMediaQuery } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 
 const AppShell = ({ children }) => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const sidebarWidth = collapsed ? 72 : 260
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        onNavigate={() => setMobileOpen(false)}
+      />
       <Box
         component="main"
         sx={{
@@ -20,7 +31,7 @@ const AppShell = ({ children }) => {
           transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        <Header />
+        <Header onMenuClick={() => setMobileOpen(true)} />
         <Box
           sx={{
             flex: 1,

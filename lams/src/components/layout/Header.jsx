@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, Search, User, Sun, Moon, Settings } from 'lucide-react'
+import { Bell, Search, User, Sun, Moon, Settings, Menu as MenuIcon } from 'lucide-react'
 import Breadcrumb from '../common/Breadcrumb'
 import { useAuth } from '../../auth/AuthContext'
 import {
@@ -20,7 +20,7 @@ import {
 } from '@mui/material'
 import { useAppTheme } from '../../styles/ThemeProvider'
 
-const Header = ({ onSearch, user }) => {
+const Header = ({ onSearch, user, onMenuClick, isMobile }) => {
   const { hasPermission } = useAuth()
   const { mode, toggleTheme } = useAppTheme()
   const isDark = mode === 'dark'
@@ -47,8 +47,24 @@ const Header = ({ onSearch, user }) => {
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', minHeight: 64, px: { xs: 2, md: 3 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Breadcrumb />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          {isMobile && (
+            <IconButton
+              onClick={onMenuClick}
+              size="small"
+              edge="start"
+              aria-label="Open navigation menu"
+              sx={{
+                color: 'text.secondary',
+                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(30,111,255,0.06)' },
+              }}
+            >
+              <MenuIcon size={20} />
+            </IconButton>
+          )}
+          <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+            <Breadcrumb />
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

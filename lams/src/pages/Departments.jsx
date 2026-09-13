@@ -165,7 +165,7 @@ const Departments = () => {
 
       <Card elevation={0} sx={{ border: `1px solid ${borderColor}`, boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(30,111,255,0.04)', overflow: 'hidden' }}>
         <Box sx={{ p: 0 }}>
-          <Box sx={{ height: 520, width: '100%' }}>
+          <Box sx={{ height: 'clamp(360px, calc(100dvh - 330px), 760px)', width: '100%' }}>
             <DataGrid
               rows={departments}
               columns={columns}

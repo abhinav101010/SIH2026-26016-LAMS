@@ -48,11 +48,12 @@ const bottomNav = [
   { label: 'Help & Support', icon: HelpCircle, path: '/help' },
 ]
 
-const Sidebar = ({ collapsed, onToggle }) => {
+const Sidebar = ({ collapsed, onToggle, variant = 'permanent', open, onClose, onNavigate }) => {
   const location = useLocation()
   const { user, hasPermission } = useAuth()
   const { mode } = useAppTheme()
   const isDark = mode === 'dark'
+  const isMobileDrawer = variant === 'temporary'
 
   const filteredTop = topNav.filter((item) => {
     if (!hasPermission(item.permission)) return false
@@ -69,6 +70,10 @@ const Sidebar = ({ collapsed, onToggle }) => {
         <ListItemButton
           component={Link}
           to={item.path}
+          onClick={() => {
+            if (variant === 'temporary') onClose?.()
+            onNavigate?.(item.path)
+          }}
           sx={{
             minHeight: 44,
             justifyContent: collapsed ? 'center' : 'flex-start',
@@ -114,20 +119,23 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
   return (
     <Drawer
-      variant="permanent"
+      variant={variant}
       sx={{
-        width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
+        width: variant === 'permanent' ? (collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH) : DRAWER_WIDTH,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
+          width: variant === 'permanent' ? (collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH) : DRAWER_WIDTH,
           boxSizing: 'border-box',
           bgcolor: isDark ? 'background.paper' : 'background.paper',
-          borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
-          boxShadow: isDark ? '4px 0 24px rgba(0,0,0,0.25)' : '4px 0 24px rgba(30,111,255,0.03)',
+          borderRight: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}`,
+          boxShadow: isDark ? '4px 0 24px rgba(0,0,0,0.1)' : '4px 0 24px rgba(30,111,255,0.03)',
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           overflowX: 'hidden',
         },
       }}
+      open={variant === 'temporary' ? open : undefined}
+      onClose={variant === 'temporary' ? onClose : undefined}
+      ModalProps={{ keepMounted: true }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Box

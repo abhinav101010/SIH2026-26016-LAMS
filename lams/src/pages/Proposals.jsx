@@ -114,7 +114,7 @@ const Proposals = () => {
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ height: 520, width: '100%' }}>
+        <Box sx={{ height: 'clamp(360px, calc(100dvh - 330px), 760px)', width: '100%' }}>
           <DataGrid
             rows={data.map((r) => ({ ...r, id: r.id }))}
             columns={[

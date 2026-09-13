@@ -213,10 +213,11 @@ const PublicProposals = () => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, flex: 1, overflow: 'hidden', minWidth: 0 }}>
         <Box
           sx={{
             width: { xs: '100%', md: 400, lg: 420 },
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
             bgcolor: 'background.paper',
@@ -363,7 +364,7 @@ const PublicProposals = () => {
           )}
         </Box>
 
-        <Box sx={{ flex: 1, position: 'relative', display: { xs: selectedProposal ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column' }}>
+        <Box sx={{ flex: '1 1 0%', minWidth: 0, position: 'relative', display: { xs: selectedProposal ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column' }}>
           <Box sx={{ flex: 1, position: 'relative' }}>
             <MapContainer
               key={mapKey}

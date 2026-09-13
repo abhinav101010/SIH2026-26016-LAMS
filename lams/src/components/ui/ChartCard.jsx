@@ -9,6 +9,7 @@ const ChartCard = forwardRef(
       subtitle,
       icon: Icon,
       height = 360,
+      responsiveHeight = null,
       sx = {},
       action,
       className = "",
@@ -26,9 +27,8 @@ const ChartCard = forwardRef(
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,
-          height,
-          minHeight: height,
-      
+          height: responsiveHeight ? { xs: responsiveHeight, md: height } : height,
+          minHeight: responsiveHeight ? { xs: responsiveHeight, md: height } : height,      
           display: 'flex',
           flexDirection: 'column',
 
