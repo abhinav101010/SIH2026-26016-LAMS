@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, Check, Trash2, AlertCircle, Calendar, FileText, Settings, Home } from 'lucide-react'
+import { Bell, Check, CheckCircle, Trash2, AlertCircle, Calendar, FileText, Settings, Home } from 'lucide-react'
 import ClayButton from '../components/ui/ClayButton'
 import StatusBadge from '../components/ui/StatusBadge'
 import Modal from '../components/ui/Modal'
