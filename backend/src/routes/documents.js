@@ -4,6 +4,7 @@ const {
   uploadDocument,
   getDocuments,
   getDocumentById,
+  getDocumentFile,
   deleteDocument,
   verifyDocument,
   rejectDocument,
@@ -33,5 +34,7 @@ router.get('/:id', authenticate, requirePermission('DOCUMENTS_VIEW'), getDocumen
 router.delete('/:id', authenticate, requirePermission('DOCUMENTS_UPLOAD'), deleteDocument)
 router.post('/:id/verify', authenticate, requirePermission('DOCUMENTS_VERIFY'), verifyDocument)
 router.post('/:id/reject', authenticate, requirePermission('DOCUMENTS_VERIFY'), rejectDocument)
+
+router.get('/:id/file', authenticate, requirePermission('PROPOSALS_VIEW'), getDocumentFile)
 
 module.exports = router

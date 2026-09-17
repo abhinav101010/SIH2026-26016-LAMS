@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  Eye,
   ChevronLeft,
   Download,
   Check,
@@ -25,7 +26,7 @@ import {
   MapContainer,
   TileLayer,
   Polygon,
-  Tooltip,
+  Tooltip as LeafletTooltip,
   Marker,
   Popup,
 } from "react-leaflet";
@@ -46,6 +47,7 @@ import {
   TextField,
   Tabs,
   Tab,
+  Tooltip,
   Table,
   TableBody,
   TableCell,
@@ -63,7 +65,7 @@ import {
 import ClayButton from "../components/ui/ClayButton";
 import StatusBadge from "../components/ui/StatusBadge";
 import Timeline from "../components/common/Timeline";
-import { proposalApi, parcelApi, documentApi } from "../services";
+import { proposalApi, parcelApi, documentApi, getFileWithErrorMessage } from "../services";
 import { useAuth } from "../auth/AuthContext";
 import { formatDate, formatCurrency, formatArea } from "../utils/formatters";
 
@@ -1234,6 +1236,29 @@ const ProposalDetails = () => {
                             {(doc.fileSize / 1024 / 1024).toFixed(1)} MB ·
                             Uploaded by {doc.uploadedBy?.name || "Unknown"}
                           </Typography>
+                            <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 0.5 }}>
+                              <Tooltip title="Open document">
+                                <IconButton
+                                  size="small"
+                                  aria-label="Open document"
+                                  onClick={() => {
+                                    getFileWithErrorMessage(doc.id)
+                                      .then((blob) => {
+                                        const url = URL.createObjectURL(blob)
+                                        window.open(url, "_blank")
+                                        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+                                      })
+                                      .catch((err) => {
+                                        console.error("Failed to open document:", err)
+                                        toast.error({ title: err.message || "Failed to open document" })
+                                      })
+                                  }}
+                                >
+                                  <Eye size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+
                           {doc.verifiedBy && (
                             <Typography
                               variant="caption"
@@ -1361,7 +1386,7 @@ const ProposalDetails = () => {
                             weight: 2,
                           }}
                         >
-                          <Tooltip sticky direction="top">
+                          <LeafletTooltip sticky direction="top">
                             <Box>
                               <Typography variant="caption" fontWeight={600}>
                                 {parcel.parcelNumber}
@@ -1379,7 +1404,7 @@ const ProposalDetails = () => {
                                 Owner: {parcel.owner}
                               </Typography>
                             </Box>
-                          </Tooltip>
+                          </LeafletTooltip>
                         </Polygon>
                       );
                     } catch {
@@ -1405,7 +1430,7 @@ const ProposalDetails = () => {
                                 dashArray: "5, 5",
                               }}
                             >
-                              <Tooltip sticky direction="top">
+                              <LeafletTooltip sticky direction="top">
                                 <Box>
                                   <Typography
                                     variant="caption"
@@ -1420,7 +1445,7 @@ const ProposalDetails = () => {
                                     {area.area?.toFixed(2) || 0} ha
                                   </Typography>
                                 </Box>
-                              </Tooltip>
+                              </LeafletTooltip>
                             </Polygon>
                           );
                         }

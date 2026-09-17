@@ -23,7 +23,11 @@ const uploadDocument = async (req, res) => {
 
     let storagePath = ''
     if (req.file) {
-      storagePath = path.join(uploadDir, `${Date.now()}-${req.file.originalname}`)
+      const safeName = req.file.originalname
+        .replace(/[^\w\s.\-（）\(\)]/g, '')
+        .replace(/\s+/g, '_')
+        .trim() || 'file'
+      storagePath = path.join(uploadDir, `${Date.now()}-${safeName}`)
       fs.renameSync(req.file.path, storagePath)
     } else if (req.body.storagePath) {
       storagePath = req.body.storagePath
@@ -222,7 +226,76 @@ const rejectDocument = async (req, res) => {
   }
 }
 
+const getDocumentFile = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const document = await prisma.document.findUnique({
+      where: { id },
+      include: { proposal: { select: { proposalNumber: true, projectName: true, departmentId: true } } },
+    })
+
+    if (!document) {
+      return res.status(404).json({ success: false, message: 'Document not found' })
+    }
+
+    if (req.user.role !== 'SUPER_ADMIN') {
+      if (document.proposal?.departmentId && document.proposal.departmentId !== req.user.departmentId) {
+        return res.status(403).json({ success: false, message: 'No access to this document' })
+      }
+    }
+
+    let resolved = path.resolve(document.storagePath || '')
+
+    if (!fs.existsSync(resolved)) {
+      const baseName = path.basename(document.storagePath || '')
+      const prefixMatch = baseName.match(/^(\d+)-/)
+      if (prefixMatch) {
+        const candidates = fs.readdirSync(uploadDir).filter((f) => f.startsWith(prefixMatch[1] + '-'))
+        if (candidates.length === 1) {
+          const candidate = path.join(uploadDir, candidates[0])
+          if (candidate.startsWith(uploadDir + path.sep)) {
+            resolved = candidate
+          }
+        }
+      }
+    }
+
+    if (!resolved.startsWith(uploadDir + path.sep)) {
+      return res.status(400).json({ success: false, message: 'Invalid document path' })
+    }
+    if (!fs.existsSync(resolved)) {
+      return res.status(404).json({ success: false, message: 'File missing on server' })
+    }
+
+    const ext = path.extname(resolved).toLowerCase()
+    const mime =
+      ext === '.pdf' ? 'application/pdf'
+      : ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)
+        ? `image/${ext.slice(1).replace('jpg', 'jpeg')}`
+        : ext === '.doc' ? 'application/msword'
+        : ext === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/octet-stream'
+
+    const inline = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)
+    res.setHeader('Content-Type', mime)
+    res.setHeader('Content-Disposition', `${inline ? 'inline' : 'attachment'}; filename="${encodeURIComponent(document.fileName || 'document')}"`)
+
+    const stream = fs.createReadStream(resolved)
+    stream.on('error', (err) => {
+      if (!res.headersSent) {
+        return res.status(500).json({ success: false, message: 'Failed to stream file' })
+      }
+      res.end()
+    })
+    return stream.pipe(res)
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch document file', error: error.message })
+  }
+}
+
 module.exports = {
+  getDocumentFile,
   uploadDocument,
   getDocuments,
   getDocumentById,
